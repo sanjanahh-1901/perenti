@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Tickets | Perenti</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=2">
+  <style>
+    .dashboard-page-wrapper {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-primary);
+    }
+    .dashboard-main-content {
+      flex: 1;
+      max-width: 800px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+    }
+    .hub-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .hub-title-section h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+    .hub-title-section p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+    .empty-tickets-view {
+      background-color: var(--bg-info-card);
+      border: 1px dashed var(--border-card);
+      border-radius: 1rem;
+      padding: 4rem 2rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .empty-graphic {
+      width: 4rem;
+      height: 4rem;
+      color: var(--text-muted);
+      opacity: 0.4;
+    }
+    .empty-tickets-view h3 {
+      font-size: 1.25rem;
+      color: var(--text-main);
+      font-weight: 700;
+    }
+    .empty-tickets-view p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      max-width: 320px;
+    }
+    .tickets-scroll-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+    .ticket-stub-container {
+      max-width: 440px;
+      margin: 0 auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 0.75rem;
+    }
+    
+    /* Print overrides matching index print view */
+    @media print {
+      body > *:not(#print-area-wrapper) {
+        display: none !important;
+      }
+      body > #print-area-wrapper {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        background: transparent !important;
+      }
+      .print-ticket-page {
+        display: block !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        width: 100% !important;
+      }
+      .print-ticket-page:last-child {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+      }
+      .ticket-stub-container {
+        display: flex !important;
+        visibility: visible !important;
+        border: 1px solid #E5E7EB !important;
+        background-color: #F9FAFB !important;
+        margin: 0 auto 30px auto !important;
+        width: 100% !important;
+        max-width: 400px !important;
+        box-shadow: none !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .ticket-stub-header {
+        background-color: #5A9A8E !important;
+        color: #ffffff !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+  </style>
+</head>
+<body class="dashboard-page-wrapper">
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="index.html" class="brand-link">
+        <svg class="brand-logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="brand-name">perenti</span>
+      </a>
+      
+      <div class="header-actions" style="display: flex; align-items: center; gap: 0.75rem;">
+        <span class="session-email-text" id="header-user-email" style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);"></span>
+        <a href="index.html" class="btn btn-secondary btn-sm">Book Passes</a>
+        <button type="button" class="btn btn-outline btn-sm" id="btn-dashboard-logout">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Area -->
+  <main class="dashboard-main-content" id="print-area-wrapper">
+    <div class="hub-header-row">
+      <div class="hub-title-section">
+        <h1>My Tickets Hub</h1>
+        <p>Review your registration passes. Present the QR codes at the venue entrance.</p>
+      </div>
+      <button type="button" class="btn btn-primary" id="btn-print-hub" style="display: none;">
+        Print All Tickets
+      </button>
+    </div>
+
+    <!-- Empty View -->
+    <div class="empty-tickets-view hidden" id="hub-empty-state">
+      <svg class="empty-graphic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="16" y1="2" x2="16" y2="6"></line>
+        <line x1="8" y1="2" x2="8" y2="6"></line>
+        <line x1="3" y1="10" x2="21" y2="10"></line>
+      </svg>
+      <h3>No passes found</h3>
+      <p>You haven't purchased any passes for the Ebc 28th Meetup yet.</p>
+      <a href="index.html" class="btn btn-primary">Find Event & Book Passes</a>
+    </div>
+
+    <!-- Tickets List Wrapper -->
+    <div class="tickets-scroll-container" id="hub-tickets-container">
+      <!-- Generated stubs inject here -->
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Session boundary check
+      let session = null;
+      try {
+        session = JSON.parse(localStorage.getItem('currentUser'));
+      } catch (e) {
+        console.error("Error parsing session:", e);
+        try {
+          localStorage.removeItem('currentUser');
+        } catch (_) {}
+      }
+      if (!session || session.role !== 'user') {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      // Populate header email
+      document.getElementById('header-user-email').textContent = session.email;
+
+      const ticketsContainer = document.getElementById('hub-tickets-container');
+      const emptyState = document.getElementById('hub-empty-state');
+      const printBtn = document.getElementById('btn-print-hub');
+
+      // Load tickets list
+      function renderUserTickets() {
+        const allTickets = JSON.parse(localStorage.getItem('tickets')) || [];
+        const userTickets = allTickets.filter(t => t.email === session.email);
+
+        if (userTickets.length === 0) {
+          emptyState.classList.remove('hidden');
+          ticketsContainer.innerHTML = '';
+          printBtn.style.display = 'none';
+          return;
+        }
+
+        emptyState.classList.add('hidden');
+        printBtn.style.display = 'block';
+        ticketsContainer.innerHTML = '';
+
+        userTickets.forEach((t, idx) => {
+          const statusClass = t.status === 'checked-in' ? 'checked-in' : 'unused';
+          const statusText = t.status === 'checked-in' ? 'Checked In' : 'Unused';
+          const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(t.id)}`;
+
+          const ticketHtml = `
+            <div class="print-ticket-page">
+              <div class="ticket-stub-container">
+                <div class="ticket-stub-header">
+                  <div class="stub-brand-logo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:1.2rem; height:1.2rem; color: #ffffff;">
+                      <path d="M12 2L2 7L12 12L22 7L12 2Z"/>
+                      <path d="M2 17L12 22L22 17"/>
+                    </svg>
+                    <span>perenti pass</span>
+                  </div>
+                  <span class="ticket-status-tag ${statusClass}" id="status-tag-${t.id}">${statusText}</span>
+                </div>
+                
+                <div class="ticket-stub-main">
+                  <h4 class="stub-event-title">Ebc 28th Meetup</h4>
+                  <div class="stub-event-grid">
+                    <p class="stub-event-meta"><strong>Date:</strong> Sunday, June 14, 2026</p>
+                    <p class="stub-event-meta"><strong>Time:</strong> 9:00 AM - 11:00 AM (Asia/Kolkata)</p>
+                    <p class="stub-event-meta"><strong>Venue:</strong> Birch Cafe, Hyderabad</p>
+                  </div>
+                  
+                  <div class="stub-user-info">
+                    <p><strong>Attendee:</strong> <span>${t.email}</span></p>
+                    <p><strong>Ticket ID:</strong> <span class="monospaced-code">${t.id}</span></p>
+                    <p><strong>Pass:</strong> <span>${idx + 1} of ${userTickets.length}</span></p>
+                  </div>
+                </div>
+                
+                <div class="ticket-stub-cut-divider">
+                  <div class="cut-left"></div>
+                  <div class="cut-line"></div>
+                  <div class="cut-right"></div>
+                </div>
+                
+                <div class="ticket-stub-qr">
+                  <img src="${qrUrl}" alt="Ticket QR Code" class="stub-qr-code-img">
+                  <span class="qr-code-sub">Present this QR code to the organizer at the venue entrance.</span>
+                </div>
+              </div>
+            </div>
+          `;
+          ticketsContainer.insertAdjacentHTML('beforeend', ticketHtml);
+        });
+      }
+
+      renderUserTickets();
+
+      // Polling database state to update status tags live when admin checks user in!
+      setInterval(() => {
+        const allTickets = JSON.parse(localStorage.getItem('tickets')) || [];
+        const userTickets = allTickets.filter(t => t.email === session.email);
+
+        userTickets.forEach(t => {
+          const element = document.getElementById(`status-tag-${t.id}`);
+          if (element) {
+            const currentStatus = element.textContent.trim();
+            const dbStatus = t.status === 'checked-in' ? 'Checked In' : 'Unused';
+            if (currentStatus !== dbStatus) {
+              element.textContent = dbStatus;
+              element.className = `ticket-status-tag ${t.status === 'checked-in' ? 'checked-in' : 'unused'}`;
+            }
+          }
+        });
+      }, 1000);
+
+      // Print action
+      printBtn.addEventListener('click', () => {
+        window.print();
+      });
+
+      // Logout handler
+      document.getElementById('btn-dashboard-logout').addEventListener('click', () => {
+        localStorage.removeItem('currentUser');
+        window.location.href = 'index.html';
+      });
+    });
+  </script>
+</body>
+</html>
