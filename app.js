@@ -24,9 +24,10 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('tickets', JSON.stringify(defaultTickets));
   }
 
-  // Initial capacity
-  if (!localStorage.getItem('ticketsRemaining') || localStorage.getItem('ticketsRemaining') === '56') {
+  // Initial capacity version 2 (force reset to 60 once)
+  if (!localStorage.getItem('ticketsRemaining_v2')) {
     localStorage.setItem('ticketsRemaining', '60');
+    localStorage.setItem('ticketsRemaining_v2', 'true');
   }
 
   // ==========================================================================
