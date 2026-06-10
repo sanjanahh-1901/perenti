@@ -25,8 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Initial capacity
-  if (!localStorage.getItem('ticketsRemaining')) {
-    localStorage.setItem('ticketsRemaining', '56');
+  if (!localStorage.getItem('ticketsRemaining') || localStorage.getItem('ticketsRemaining') === '56') {
+    localStorage.setItem('ticketsRemaining', '60');
   }
 
   // ==========================================================================
@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const PROMO_DISCOUNT_PERCENT = 0.10; 
 
   // Read stock capacity from localstorage
-  let ticketsRemaining = parseInt(localStorage.getItem('ticketsRemaining')) || 56;
+  let ticketsRemaining = parseInt(localStorage.getItem('ticketsRemaining')) || 60;
 
   // Available badges refs
   const availableBadge = document.getElementById('ticket-available-badge');
