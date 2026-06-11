@@ -121,17 +121,17 @@
       </form>
       
       <div class="oauth-divider">
-        <span>Or log in with Microsoft</span>
+        <span>Or log in with Google</span>
       </div>
       
-      <button type="button" class="btn btn-outline btn-block btn-lg" id="btn-microsoft-login">
-        <svg class="microsoft-icon" viewBox="0 0 23 23" xmlns="http://www.w3.org/2000/svg" style="margin-right:0.5rem;">
-          <path fill="#f35325" d="M0 0h11v11H0z"/>
-          <path fill="#81bc06" d="M12 0h11v11H12z"/>
-          <path fill="#05a6f0" d="M0 12h11v11H0z"/>
-          <path fill="#ffba08" d="M12 12h11v11H12z"/>
+      <button type="button" class="btn btn-outline btn-block btn-lg" id="btn-google-login">
+        <svg class="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem;">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
         </svg>
-        Single Sign-on (Entra ID)
+        Sign in with Google
       </button>
 
       <p class="auth-switch-prompt">
@@ -140,16 +140,38 @@
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyB7FBluJ3ybc1FyB-3kzh5Gnf68aSR5sUM",
+      authDomain: "perenti-app.firebaseapp.com",
+      projectId: "perenti-app",
+      storageBucket: "perenti-app.firebasestorage.app",
+      messagingSenderId: "136634053807",
+      appId: "1:136634053807:web:f31bb498a6feefa28d105a"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Auto-redirect 127.0.0.1 to localhost to avoid Firebase unauthorized domain error
+    if (window.location.hostname === '127.0.0.1') {
+      window.location.hostname = 'localhost';
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
-      // Seed default users if they don't exist
-      if (!localStorage.getItem('users')) {
-        const defaultUsers = [
-          { email: 'nikhila@google.com', password: 'password', role: 'user' },
-          { email: 'admin@perenti.com', password: 'password', role: 'admin' }
-        ];
-        localStorage.setItem('users', JSON.stringify(defaultUsers));
-      }
+      const loginForm = document.getElementById('login-form');
+      const emailInput = document.getElementById('login-email');
+      const passwordInput = document.getElementById('login-password');
+      const errorAlert = document.getElementById('login-error-alert');
+      const errorText = document.getElementById('login-error-text');
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectQty = urlParams.get('qty');
+
+
 
       // Seed default tickets if they don't exist
       if (!localStorage.getItem('tickets')) {
@@ -162,70 +184,57 @@
         localStorage.setItem('tickets', JSON.stringify(defaultTickets));
       }
 
-      const loginForm = document.getElementById('login-form');
-      const emailInput = document.getElementById('login-email');
-      const passwordInput = document.getElementById('login-password');
-      const errorAlert = document.getElementById('login-error-alert');
-      const errorText = document.getElementById('login-error-text');
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const redirectQty = urlParams.get('qty');
-
-      loginForm.addEventListener('submit', (e) => {
+      loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         errorAlert.classList.add('hidden');
 
-        const email = emailInput.value.trim().toLowerCase();
+        const email = emailInput.value.trim();
         const password = passwordInput.value;
 
-        let users = [];
         try {
-          users = JSON.parse(localStorage.getItem('users')) || [];
-        } catch (e) {
-          console.error("Error parsing users:", e);
-        }
-        const user = users.find(u => u.email === email && u.password === password);
-
-        if (user) {
-          // Store session
-          localStorage.setItem('currentUser', JSON.stringify({ email: user.email, role: user.role }));
-
-          // Redirect
-          if (user.role === 'admin') {
-            window.location.href = 'admin-dashboard.html';
-          } else {
-            if (redirectQty && parseInt(redirectQty) > 0) {
-              bookTicketsForUser(user.email, parseInt(redirectQty), 'offline');
-            } else {
-              window.location.href = 'user-dashboard.html';
-            }
-          }
-        } else {
-          errorText.textContent = 'Invalid email or password.';
+          const userCredential = await signInWithEmailAndPassword(auth, email, password);
+          const user = userCredential.user;
+          handleSuccessfulLogin(user.email);
+        } catch (error) {
+          console.error("Error signing in:", error);
+          errorText.textContent = error.message;
           errorAlert.classList.remove('hidden');
         }
       });
 
-      // Microsoft SSO
-      const btnMicrosoft = document.getElementById('btn-microsoft-login');
-      btnMicrosoft.addEventListener('click', () => {
-        const microsoftUser = { email: 'entra.builder@microsoft.com', role: 'user' };
-        
-        // Save to users list if new
-        const users = JSON.parse(localStorage.getItem('users')) || [];
-        if (!users.some(u => u.email === microsoftUser.email)) {
-          users.push({ email: microsoftUser.email, password: 'password', role: 'user' });
-          localStorage.setItem('users', JSON.stringify(users));
-        }
-
-        localStorage.setItem('currentUser', JSON.stringify(microsoftUser));
-
-        if (redirectQty && parseInt(redirectQty) > 0) {
-          bookTicketsForUser(microsoftUser.email, parseInt(redirectQty), 'offline');
-        } else {
-          window.location.href = 'user-dashboard.html';
+      // Google SSO
+      const btnGoogle = document.getElementById('btn-google-login');
+      btnGoogle.addEventListener('click', async () => {
+        errorAlert.classList.add('hidden');
+        const provider = new GoogleAuthProvider();
+        try {
+          const result = await signInWithPopup(auth, provider);
+          handleSuccessfulLogin(result.user.email);
+        } catch (error) {
+          // User closed the popup or auth error
+          if (error.code !== 'auth/popup-closed-by-user') {
+            console.error("Error signing in with Google:", error);
+            errorText.textContent = error.message;
+            errorAlert.classList.remove('hidden');
+          }
         }
       });
+
+      function handleSuccessfulLogin(email) {
+        const roles = JSON.parse(localStorage.getItem('userRoles')) || {};
+        const role = roles[email] || (email === 'admin@perenti.com' ? 'admin' : 'user');
+        localStorage.setItem('currentUser', JSON.stringify({ email: email, role: role }));
+
+        if (role === 'admin') {
+          window.location.href = 'admin-dashboard.html';
+        } else {
+          if (redirectQty && parseInt(redirectQty) > 0) {
+            bookTicketsForUser(email, parseInt(redirectQty), 'offline');
+          } else {
+            window.location.href = 'user-dashboard.html';
+          }
+        }
+      }
 
       function bookTicketsForUser(email, qty, paymentType = 'offline') {
         const tickets = JSON.parse(localStorage.getItem('tickets')) || [];
