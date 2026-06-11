@@ -100,30 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ==========================================================================
-  // Horizontal Tab Switcher
-  // ==========================================================================
-  const tabButtons = document.querySelectorAll('.nav-tab-btn');
-  const contentPanels = document.querySelectorAll('.content-panel');
-
-  tabButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const targetPanelId = btn.getAttribute('data-panel');
-
-      tabButtons.forEach(b => b.classList.remove('active'));
-      contentPanels.forEach(p => p.classList.remove('active'));
-
-      btn.classList.add('active');
-      document.getElementById(targetPanelId).classList.add('active');
-    });
-  });
-
-  const registerShortcutBtn = document.getElementById('btn-switch-to-tickets');
-  if (registerShortcutBtn) {
-    registerShortcutBtn.addEventListener('click', () => {
-      document.getElementById('btn-tab-tickets').click();
-    });
-  }
 
   // ==========================================================================
   // Stepper & Calculations Logic
@@ -134,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   const summaryEmptyView = document.getElementById('summary-empty-view');
   const summaryBreakdownView = document.getElementById('summary-breakdown-view');
-  const checkoutSubmitBtn = document.getElementById('btn-checkout-submit');
+  const registerSubmitBtn = document.getElementById('btn-register-submit');
 
   const summaryQty = document.getElementById('summary-qty');
   const summarySubtotal = document.getElementById('summary-subtotal');
@@ -158,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const GATEWAY_FEE_PER_TICKET = 12.13;
   const GST_RATE_OF_PLATFORM = 0.18; 
 
-  let quantity = 0;
+  let quantity = 1;
   let isPromoApplied = false;
   const PROMO_CODE_VALID = 'EBC10';
   const PROMO_DISCOUNT_PERCENT = 0.10; 
@@ -182,8 +158,8 @@ document.addEventListener('DOMContentLoaded', () => {
   updateTicketsRemainingDisplay();
 
   function updateCalculations() {
-    qtyDisplay.textContent = quantity;
-    qtyDec.disabled = quantity <= 0;
+    if (qtyDisplay) qtyDisplay.textContent = quantity;
+    if (qtyDec) qtyDec.disabled = quantity <= 1;
 
     const maxAllowed = Math.min(10, ticketsRemaining);
     if (qtyInc) {
@@ -191,15 +167,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (quantity > 0) {
-      summaryEmptyView.classList.add('hidden');
-      summaryBreakdownView.classList.remove('hidden');
-      checkoutSubmitBtn.disabled = false;
-      checkoutSubmitBtn.classList.add('active');
+      if (summaryEmptyView) summaryEmptyView.classList.add('hidden');
+      if (summaryBreakdownView) summaryBreakdownView.classList.remove('hidden');
+      if (registerSubmitBtn) {
+        registerSubmitBtn.disabled = false;
+        registerSubmitBtn.classList.add('active');
+      }
     } else {
-      summaryEmptyView.classList.remove('hidden');
-      summaryBreakdownView.classList.add('hidden');
-      checkoutSubmitBtn.disabled = true;
-      checkoutSubmitBtn.classList.remove('active');
+      if (summaryEmptyView) summaryEmptyView.classList.remove('hidden');
+      if (summaryBreakdownView) summaryBreakdownView.classList.add('hidden');
+      if (registerSubmitBtn) {
+        registerSubmitBtn.disabled = true;
+        registerSubmitBtn.classList.remove('active');
+      }
       resetPromoCode();
     }
 
@@ -235,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (qtyDec) {
     qtyDec.addEventListener('click', () => {
-      if (quantity > 0) {
+      if (quantity > 1) {
         quantity--;
         updateCalculations();
       }
@@ -318,11 +298,35 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================================================
-  // Checkout Redirection & Instant Book Handlers
+  // Checkout/Registration Redirection & Instant Book Handlers
   // ==========================================================================
-  if (checkoutSubmitBtn) {
-    checkoutSubmitBtn.addEventListener('click', () => {
+  const registrationSummaryModal = document.getElementById('registration-summary-modal');
+  const closeSummaryModalBtn = document.getElementById('btn-close-summary-modal');
+  const detailsRegisterBtn = document.getElementById('btn-details-register');
+
+  if (detailsRegisterBtn) {
+    detailsRegisterBtn.addEventListener('click', () => {
+      if (registrationSummaryModal) {
+        updateCalculations();
+        registrationSummaryModal.classList.remove('hidden');
+      }
+    });
+  }
+
+  if (closeSummaryModalBtn && registrationSummaryModal) {
+    closeSummaryModalBtn.addEventListener('click', () => {
+      registrationSummaryModal.classList.add('hidden');
+    });
+  }
+
+  if (registerSubmitBtn) {
+    registerSubmitBtn.addEventListener('click', () => {
       if (quantity <= 0) return;
+
+      // Close summary modal
+      if (registrationSummaryModal) {
+        registrationSummaryModal.classList.add('hidden');
+      }
 
       if (session) {
         if (session.role === 'admin') {
@@ -330,16 +334,137 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
         
-        // Logged-in general user: book immediately
-        bookTicketsForUser(session.email, quantity);
+        // Logged-in general user: book immediately as offline
+        const ticketIds = bookTicketsForUser(session.email, quantity, 'offline', false);
+        showRegistrationSuccess(session.email, ticketIds);
       } else {
         // Guest: redirect to login
-        window.location.href = `login.html?qty=${quantity}`;
+        window.location.href = `login.html?qty=${quantity}&payment=offline`;
       }
     });
   }
 
-  function bookTicketsForUser(email, qty) {
+  function showRegistrationSuccess(email, ticketIds) {
+    const successEmailTarget = document.getElementById('success-email-target');
+    if (successEmailTarget) {
+      successEmailTarget.textContent = email;
+    }
+
+    const ticketsContainer = document.getElementById('user-tickets-container');
+    if (ticketsContainer) {
+      ticketsContainer.innerHTML = '';
+      ticketIds.forEach((id, idx) => {
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(id)}`;
+        const ticketHtml = `
+          <div class="print-ticket-page">
+            <div class="ticket-stub-container">
+              <div class="ticket-stub-header">
+                <div class="stub-brand-logo">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:1.2rem; height:1.2rem; color: #ffffff;">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z"/>
+                    <path d="M2 17L12 22L22 17"/>
+                  </svg>
+                  <span>perenti pass</span>
+                </div>
+                <span class="ticket-status-tag unused">Unused</span>
+              </div>
+              
+              <div class="ticket-stub-main">
+                <h4 class="stub-event-title">Ebc 28th Meetup</h4>
+                <div class="stub-event-grid">
+                  <p class="stub-event-meta"><strong>Date:</strong> Sunday, June 14, 2026</p>
+                  <p class="stub-event-meta"><strong>Time:</strong> 9:00 AM - 11:00 AM (Asia/Kolkata)</p>
+                  <p class="stub-event-meta"><strong>Venue:</strong> Birch Cafe, Hyderabad</p>
+                </div>
+                
+                <div class="stub-user-info">
+                  <p><strong>Attendee:</strong> <span>${email}</span></p>
+                  <p><strong>Ticket ID:</strong> <span class="monospaced-code">${id}</span></p>
+                  <p><strong>Pass:</strong> <span>${idx + 1} of ${ticketIds.length}</span></p>
+                  <p><strong>Payment Status:</strong> <span style="color: #d97706; font-weight: 600;">Offline Payment</span></p>
+                </div>
+              </div>
+              
+              <div class="ticket-stub-cut-divider">
+                <div class="cut-left"></div>
+                <div class="cut-line"></div>
+                <div class="cut-right"></div>
+              </div>
+              
+              <div class="ticket-stub-qr">
+                <img src="${qrUrl}" alt="Ticket QR Code" class="stub-qr-code-img">
+                <span class="qr-code-sub">Present this QR code to the organizer at the venue entrance.</span>
+              </div>
+            </div>
+          </div>
+        `;
+        ticketsContainer.insertAdjacentHTML('beforeend', ticketHtml);
+      });
+    }
+
+    const digitalTicketModal = document.getElementById('digital-ticket-modal');
+    if (digitalTicketModal) {
+      digitalTicketModal.classList.remove('hidden');
+    }
+
+    const emailModal = document.getElementById('email-preview-modal');
+    const viewEmailBtn = document.getElementById('btn-view-simulated-email-index');
+    const closeEmailModalBtn = document.getElementById('btn-close-email-modal');
+
+    if (viewEmailBtn && emailModal) {
+      const newViewEmailBtn = viewEmailBtn.cloneNode(true);
+      viewEmailBtn.parentNode.replaceChild(newViewEmailBtn, viewEmailBtn);
+      
+      newViewEmailBtn.addEventListener('click', () => {
+        document.getElementById('email-to-display').textContent = email;
+        document.getElementById('email-date-display').textContent = new Date().toLocaleString();
+        document.getElementById('email-qty-display').textContent = ticketIds.length;
+
+        let listHtml = '';
+        ticketIds.forEach((id, i) => {
+          const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(id)}`;
+          listHtml += `
+            <div style="border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1rem; display: flex; align-items: center; gap: 1rem; background-color: #f8fafc;">
+              <img src="${qrUrl}" alt="QR Code" style="width: 80px; height: 80px; border: 1px solid #e2e8f0; border-radius: 0.375rem; background: white; padding: 0.25rem;">
+              <div style="flex: 1; font-size: 0.8rem; line-height: 1.4; color: #334155;">
+                <p style="margin: 0; font-weight: 700; color: #1e293b;">Pass ${i + 1} of ${ticketIds.length}</p>
+                <p style="margin: 2px 0 0 0; color: #64748b;"><strong>Ticket ID:</strong> ${id}</p>
+                <p style="margin: 2px 0 0 0; color: #64748b;"><strong>Status:</strong> Unused (Offline Payment)</p>
+              </div>
+            </div>
+          `;
+        });
+        document.getElementById('email-tickets-list').innerHTML = listHtml;
+        emailModal.classList.remove('hidden');
+      });
+    }
+
+    if (closeEmailModalBtn && emailModal) {
+      closeEmailModalBtn.addEventListener('click', () => {
+        emailModal.classList.add('hidden');
+      });
+    }
+  }
+
+  // Bind general close and print events
+  const digitalTicketModal = document.getElementById('digital-ticket-modal');
+  const closeTicketModalBtn = document.getElementById('btn-close-ticket-modal');
+  const printTicketBtn = document.getElementById('btn-print-ticket');
+
+  if (closeTicketModalBtn && digitalTicketModal) {
+    closeTicketModalBtn.addEventListener('click', () => {
+      digitalTicketModal.classList.add('hidden');
+      window.location.reload();
+    });
+  }
+
+  if (printTicketBtn) {
+    printTicketBtn.addEventListener('click', () => {
+      window.print();
+    });
+  }
+
+  function bookTicketsForUser(email, qty, paymentType = 'offline', redirect = true) {
     const tickets = JSON.parse(localStorage.getItem('tickets')) || [];
     const orderNum = Math.floor(10000 + Math.random() * 90000);
     
@@ -356,6 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
         email: email,
         qty: 1,
         status: 'unused',
+        payment: paymentType,
         timestamp: new Date().toLocaleString()
       });
       newTicketIds.push(ticketIdStr);
@@ -363,13 +489,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     localStorage.setItem('tickets', JSON.stringify(tickets));
     localStorage.setItem('lastGeneratedTickets', JSON.stringify(newTicketIds));
+    localStorage.setItem('justBookedQty', qty);
+    localStorage.setItem('justBookedEmail', email);
 
     // Reset stepper
     quantity = 0;
     updateCalculations();
 
-    // Redirect to User Hub
-    window.location.href = 'user-dashboard.html';
+    if (redirect) {
+      window.location.href = 'user-dashboard.html';
+    } else {
+      return newTicketIds;
+    }
   }
 
   // ==========================================================================
@@ -468,5 +599,181 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 3000);
     }
   }
+
+  // Parse URL redirect parameters to restore checkout state
+  const urlParams = new URLSearchParams(window.location.search);
+  const triggerQty = urlParams.get('qty');
+  
+  if (triggerQty && parseInt(triggerQty) > 0) {
+    quantity = parseInt(triggerQty);
+    updateCalculations();
+  }
+
+  // ==========================================================================
+  // Dynamic Clickable Attendees List Logic
+  // ==========================================================================
+  const attendeesListContainer = document.getElementById('attendees-list-container');
+  const attendeesCountVal = document.getElementById('attendees-count-val');
+  const attendeeProfileModal = document.getElementById('attendee-profile-modal');
+  const closeAttendeeModalBtn = document.getElementById('btn-close-attendee-modal');
+  
+  const modalAttendeeAvatar = document.getElementById('modal-attendee-avatar');
+  const modalAttendeeName = document.getElementById('modal-attendee-name');
+  const modalAttendeeEmail = document.getElementById('modal-attendee-email');
+  const modalAttendeeStatus = document.getElementById('modal-attendee-status');
+  const modalAttendeeTicketsCount = document.getElementById('modal-attendee-tickets-count');
+  const modalAttendeeTime = document.getElementById('modal-attendee-time');
+
+  const btnModalAttendeeMessage = document.getElementById('btn-modal-attendee-message');
+  const btnModalAttendeeConnect = document.getElementById('btn-modal-attendee-connect');
+
+  function renderAttendeesList() {
+    if (!attendeesListContainer) return;
+
+    const tickets = JSON.parse(localStorage.getItem('tickets')) || [];
+    
+    // Group tickets by email to list unique attendees
+    const attendeesMap = new Map();
+    tickets.forEach(ticket => {
+      if (!attendeesMap.has(ticket.email)) {
+        attendeesMap.set(ticket.email, {
+          email: ticket.email,
+          ticketsCount: 0,
+          checkedIn: false,
+          latestTimestamp: ticket.timestamp,
+          ticketIds: []
+        });
+      }
+      const attendee = attendeesMap.get(ticket.email);
+      attendee.ticketsCount += ticket.qty || 1;
+      attendee.ticketIds.push(ticket.id);
+      if (ticket.status === 'checked-in') {
+        attendee.checkedIn = true;
+      }
+      // Keep track of latest timestamp
+      try {
+        if (new Date(ticket.timestamp) > new Date(attendee.latestTimestamp)) {
+          attendee.latestTimestamp = ticket.timestamp;
+        }
+      } catch (e) {
+        // Fallback if timestamp fails parsing
+      }
+    });
+
+    const uniqueAttendees = Array.from(attendeesMap.values());
+    
+    if (attendeesCountVal) {
+      attendeesCountVal.textContent = uniqueAttendees.length;
+    }
+
+    attendeesListContainer.innerHTML = '';
+
+    if (uniqueAttendees.length === 0) {
+      attendeesListContainer.innerHTML = `
+        <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 2rem 0;">
+          No attendees registered yet.
+        </div>
+      `;
+      return;
+    }
+
+    // Sort: checked-in first, then alphabetically
+    uniqueAttendees.sort((a, b) => {
+      if (a.checkedIn && !b.checkedIn) return -1;
+      if (!a.checkedIn && b.checkedIn) return 1;
+      return a.email.localeCompare(b.email);
+    });
+
+    uniqueAttendees.forEach(attendee => {
+      const emailLocalPart = attendee.email.split('@')[0];
+      // Generate readable name (e.g. rahul.k -> Rahul K)
+      const nameParts = emailLocalPart.split(/[._-]/);
+      const displayName = nameParts
+        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+
+      const firstLetter = displayName.charAt(0) || 'U';
+
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'attendee-item-row';
+      
+      const statusLabel = attendee.checkedIn ? 'Checked In' : 'Registered';
+      const statusClass = attendee.checkedIn ? 'checked-in' : 'registered';
+
+      row.innerHTML = `
+        <div class="attendee-avatar">${firstLetter}</div>
+        <div class="attendee-info-block">
+          <span class="attendee-display-name">${displayName}</span>
+          <span class="attendee-email-sub">${attendee.email}</span>
+        </div>
+        <span class="attendee-status-indicator ${statusClass}">${statusLabel}</span>
+      `;
+
+      row.addEventListener('click', () => {
+        openAttendeeProfile(attendee, displayName);
+      });
+
+      attendeesListContainer.appendChild(row);
+    });
+  }
+
+  function openAttendeeProfile(attendee, displayName) {
+    if (!attendeeProfileModal) return;
+
+    const firstLetter = displayName.charAt(0) || 'U';
+    if (modalAttendeeAvatar) modalAttendeeAvatar.textContent = firstLetter;
+    if (modalAttendeeName) modalAttendeeName.textContent = displayName;
+    if (modalAttendeeEmail) modalAttendeeEmail.textContent = attendee.email;
+    
+    if (modalAttendeeStatus) {
+      modalAttendeeStatus.textContent = attendee.checkedIn ? 'Checked In' : 'Registered';
+      modalAttendeeStatus.className = `attendee-status-indicator ${attendee.checkedIn ? 'checked-in' : 'registered'}`;
+    }
+
+    if (modalAttendeeTicketsCount) {
+      modalAttendeeTicketsCount.textContent = `${attendee.ticketsCount} Pass${attendee.ticketsCount > 1 ? 'es' : ''}`;
+    }
+
+    if (modalAttendeeTime) {
+      modalAttendeeTime.textContent = attendee.latestTimestamp || '-';
+    }
+
+    // Reset connect/message buttons inside the modal
+    if (btnModalAttendeeConnect) {
+      btnModalAttendeeConnect.textContent = 'Connect';
+      btnModalAttendeeConnect.disabled = false;
+    }
+    if (btnModalAttendeeMessage) {
+      btnModalAttendeeMessage.textContent = 'Message';
+      btnModalAttendeeMessage.disabled = false;
+    }
+
+    attendeeProfileModal.classList.remove('hidden');
+  }
+
+  if (closeAttendeeModalBtn && attendeeProfileModal) {
+    closeAttendeeModalBtn.addEventListener('click', () => {
+      attendeeProfileModal.classList.add('hidden');
+    });
+  }
+
+  // Handle mock messaging & connect actions
+  if (btnModalAttendeeConnect) {
+    btnModalAttendeeConnect.addEventListener('click', () => {
+      btnModalAttendeeConnect.textContent = 'Requested';
+      btnModalAttendeeConnect.disabled = true;
+      showToast(`Connection request sent to ${modalAttendeeEmail.textContent}!`);
+    });
+  }
+
+  if (btnModalAttendeeMessage) {
+    btnModalAttendeeMessage.addEventListener('click', () => {
+      showToast(`Connection request sent. You can message this attendee once they accept.`);
+    });
+  }
+
+  // Initial render
+  renderAttendeesList();
 
 });

@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=2">
+  <link rel="stylesheet" href="styles.css?v=4">
   <style>
     .auth-page-wrapper {
       min-height: 100vh;
@@ -202,14 +202,14 @@
           window.location.href = 'admin-dashboard.html';
         } else {
           if (redirectQty && parseInt(redirectQty) > 0) {
-            bookTicketsForUser(email, parseInt(redirectQty));
+            bookTicketsForUser(email, parseInt(redirectQty), 'offline');
           } else {
             window.location.href = 'user-dashboard.html';
           }
         }
       });
 
-      function bookTicketsForUser(email, qty) {
+      function bookTicketsForUser(email, qty, paymentType = 'offline') {
         const tickets = JSON.parse(localStorage.getItem('tickets')) || [];
         const orderNum = Math.floor(10000 + Math.random() * 90000);
         let ticketsRemaining = parseInt(localStorage.getItem('ticketsRemaining')) || 60;
@@ -225,6 +225,7 @@
             email: email,
             qty: 1,
             status: 'unused',
+            payment: paymentType,
             timestamp: new Date().toLocaleString()
           });
           newTicketIds.push(ticketIdStr);
@@ -232,6 +233,8 @@
 
         localStorage.setItem('tickets', JSON.stringify(tickets));
         localStorage.setItem('lastGeneratedTickets', JSON.stringify(newTicketIds));
+        localStorage.setItem('justBookedQty', qty);
+        localStorage.setItem('justBookedEmail', email);
 
         window.location.href = 'user-dashboard.html';
       }

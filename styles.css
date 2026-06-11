@@ -1056,6 +1056,14 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 6px 14px rgba(13, 148, 136, 0.3);
 }
 
+#btn-checkout-submit.active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+}
+#btn-checkout-submit.active:hover {
+  box-shadow: 0 6px 14px rgba(16, 185, 129, 0.3);
+}
+
 /* ==========================================================================
    Details Panel Contents
    ========================================================================== */
@@ -1173,12 +1181,37 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .details-cta-banner {
-  margin-top: 1rem;
   display: flex;
 }
 
-.details-cta-banner button {
+#btn-details-register {
+  padding: 1rem 1.75rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-radius: 0.5rem;
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -0.01em;
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-hover));
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(90, 154, 142, 0.25);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   width: 100%;
+}
+
+#btn-details-register:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(90, 154, 142, 0.4);
+  background: linear-gradient(135deg, var(--brand-primary-hover), #43786e);
+}
+
+#btn-details-register:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 6px rgba(90, 154, 142, 0.25);
 }
 
 /* ==========================================================================
@@ -2034,4 +2067,183 @@ h1, h2, h3, h4, h5, h6 {
     print-color-adjust: exact !important;
   }
 }
+
+/* ==========================================================================
+   Event Details & Clickable Attendees Section Grid
+   ========================================================================== */
+.event-grid-layout {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 2rem;
+  width: 100%;
+  margin: 0 auto 2.5rem auto;
+  align-items: start;
+}
+
+@media (max-width: 992px) {
+  .event-grid-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.event-details-col {
+  background: var(--bg-card);
+  border: 1px solid var(--divider);
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.event-attendees-col {
+  background: var(--bg-card);
+  border: 1px solid var(--divider);
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.attendees-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--divider);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.attendees-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-main);
+  font-family: 'Outfit', sans-serif;
+  margin: 0;
+}
+
+.attendees-count-badge {
+  background-color: var(--bg-badge);
+  color: var(--brand-primary);
+  font-size: 0.8rem;
+  font-weight: 750;
+  padding: 0.2rem 0.65rem;
+  border-radius: 9999px;
+  font-family: 'Outfit', sans-serif;
+}
+
+.attendees-list-scrollable {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+/* Custom subtle scrollbar styling for list */
+.attendees-list-scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+
+.attendees-list-scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.attendees-list-scrollable::-webkit-scrollbar-thumb {
+  background: var(--divider);
+  border-radius: 999px;
+}
+
+.attendees-list-scrollable::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Attendee Row Item */
+.attendee-item-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--divider);
+  border-radius: 0.5rem;
+  background-color: var(--bg-info-card);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;
+  text-align: left;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+}
+
+.attendee-item-row:hover {
+  transform: translateY(-2px);
+  border-color: rgba(90, 154, 142, 0.45);
+  box-shadow: var(--shadow-sm);
+  background-color: var(--bg-primary);
+}
+
+.attendee-item-row:active {
+  transform: scale(0.98);
+}
+
+.attendee-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-hover));
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+  font-family: 'Outfit', sans-serif;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.attendee-info-block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  overflow: hidden;
+}
+
+.attendee-display-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.attendee-email-sub {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.attendee-status-indicator {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.attendee-status-indicator.checked-in {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.attendee-status-indicator.registered {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
 

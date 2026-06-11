@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=2">
+  <link rel="stylesheet" href="styles.css?v=4">
   <style>
     .dashboard-page-wrapper {
       min-height: 100vh;
@@ -151,6 +151,25 @@
 
   <!-- Main Area -->
   <main class="dashboard-main-content" id="print-area-wrapper">
+    <!-- Success Banner -->
+    <div class="email-success-alert hidden" id="booking-success-alert" style="background-color: #ecfdf5; border: 1px solid #10b981; border-radius: 0.75rem; padding: 1.25rem; margin-bottom: 2rem; display: flex; flex-direction: column; gap: 0.75rem; box-shadow: var(--shadow-sm);">
+      <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+        <span style="font-size: 1.5rem; line-height: 1;">🎉</span>
+        <div style="flex: 1;">
+          <h4 style="color: #065f46; font-size: 0.95rem; font-weight: 700; margin: 0 0 0.2rem 0;">Registration Successful!</h4>
+          <p style="color: #047857; font-size: 0.85rem; margin: 0; line-height: 1.4;">A booking confirmation receipt containing your digital tickets has been simulated and emailed to <strong id="alert-email-target"></strong>.</p>
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.5rem; padding-left: 2.25rem;">
+        <button type="button" class="btn btn-primary btn-sm" id="btn-view-simulated-email" style="background-color: #10b981; border-color: #10b981; color: white;">
+          ✉️ View Simulated Email
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-close-success-alert" style="background-color: transparent; border-color: #a7f3d0; color: #047857; border: 1px solid #a7f3d0;">
+          Dismiss
+        </button>
+      </div>
+    </div>
+
     <div class="hub-header-row">
       <div class="hub-title-section">
         <h1>My Tickets Hub</h1>
@@ -170,7 +189,7 @@
         <line x1="3" y1="10" x2="21" y2="10"></line>
       </svg>
       <h3>No passes found</h3>
-      <p>You haven't purchased any passes for the Ebc 28th Meetup yet.</p>
+      <p>You haven't booked any passes for the Ebc 28th Meetup yet.</p>
       <a href="index.html" class="btn btn-primary">Find Event & Book Passes</a>
     </div>
 
@@ -225,6 +244,9 @@
           const statusText = t.status === 'checked-in' ? 'Checked In' : 'Unused';
           const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(t.id)}`;
 
+          const paymentText = t.payment === 'online' ? 'Paid (Online)' : 'Offline Payment';
+          const paymentColor = t.payment === 'online' ? '#10b981' : '#d97706';
+
           const ticketHtml = `
             <div class="print-ticket-page">
               <div class="ticket-stub-container">
@@ -251,6 +273,7 @@
                     <p><strong>Attendee:</strong> <span>${t.email}</span></p>
                     <p><strong>Ticket ID:</strong> <span class="monospaced-code">${t.id}</span></p>
                     <p><strong>Pass:</strong> <span>${idx + 1} of ${userTickets.length}</span></p>
+                    <p><strong>Payment Status:</strong> <span style="color: ${paymentColor}; font-weight: 600;">${paymentText}</span></p>
                   </div>
                 </div>
                 
@@ -301,7 +324,129 @@
         localStorage.removeItem('currentUser');
         window.location.href = 'index.html';
       });
+
+      // Email Ticket Simulation Logic
+      const justBookedQty = localStorage.getItem('justBookedQty');
+      const justBookedEmail = localStorage.getItem('justBookedEmail');
+
+      if (justBookedQty && justBookedEmail) {
+        const qty = parseInt(justBookedQty);
+        const email = justBookedEmail;
+
+        const successAlert = document.getElementById('booking-success-alert');
+        const alertEmailTarget = document.getElementById('alert-email-target');
+        const viewEmailBtn = document.getElementById('btn-view-simulated-email');
+        const closeAlertBtn = document.getElementById('btn-close-success-alert');
+        const emailModal = document.getElementById('email-preview-modal');
+        const closeEmailModalBtn = document.getElementById('btn-close-email-modal');
+
+        if (successAlert && alertEmailTarget) {
+          alertEmailTarget.textContent = email;
+          successAlert.classList.remove('hidden');
+        }
+
+        if (closeAlertBtn) {
+          closeAlertBtn.addEventListener('click', () => {
+            successAlert.classList.add('hidden');
+          });
+        }
+
+        if (viewEmailBtn && emailModal) {
+          viewEmailBtn.addEventListener('click', () => {
+            document.getElementById('email-to-display').textContent = email;
+            document.getElementById('email-date-display').textContent = new Date().toLocaleString();
+            document.getElementById('email-qty-display').textContent = qty;
+
+            const allTickets = JSON.parse(localStorage.getItem('tickets')) || [];
+            const userTickets = allTickets.filter(t => t.email === email);
+            const lastTickets = userTickets.slice(-qty);
+            let listHtml = '';
+            lastTickets.forEach((t, i) => {
+              const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(t.id)}`;
+              listHtml += `
+                <div style="border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1rem; display: flex; align-items: center; gap: 1rem; background-color: #f8fafc;">
+                  <img src="${qrUrl}" alt="QR Code" style="width: 80px; height: 80px; border: 1px solid #e2e8f0; border-radius: 0.375rem; background: white; padding: 0.25rem;">
+                  <div style="flex: 1; font-size: 0.8rem; line-height: 1.4; color: #334155;">
+                    <p style="margin: 0; font-weight: 700; color: #1e293b;">Pass ${i + 1} of ${qty}</p>
+                    <p style="margin: 2px 0 0 0; color: #64748b;"><strong>Ticket ID:</strong> ${t.id}</p>
+                    <p style="margin: 2px 0 0 0; color: #64748b;"><strong>Status:</strong> Unused (Offline Payment)</p>
+                  </div>
+                </div>
+              `;
+            });
+            document.getElementById('email-tickets-list').innerHTML = listHtml;
+            emailModal.classList.remove('hidden');
+          });
+        }
+
+        if (closeEmailModalBtn && emailModal) {
+          closeEmailModalBtn.addEventListener('click', () => {
+            emailModal.classList.add('hidden');
+          });
+        }
+
+        // Clear simulation flags so alert doesn't persist on refresh
+        localStorage.removeItem('justBookedQty');
+        localStorage.removeItem('justBookedEmail');
+      }
+
+      // Set up simple listener in case they open modal but close flags are already cleared
+      const emailModal = document.getElementById('email-preview-modal');
+      const closeEmailModalBtn = document.getElementById('btn-close-email-modal');
+      if (closeEmailModalBtn && emailModal) {
+        closeEmailModalBtn.addEventListener('click', () => {
+          emailModal.classList.add('hidden');
+        });
+      }
     });
   </script>
+
+  <!-- Simulated Email Preview Modal -->
+  <div class="modal-overlay hidden" id="email-preview-modal">
+    <div class="modal-card" style="max-width: 600px;">
+      <div class="modal-header" style="background-color: #f8fafc; border-bottom: 1px solid var(--divider);">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.15rem;">✉️</span>
+          <h3 class="modal-title" style="font-size: 1rem; color: var(--text-main);">Simulated Ticket Email</h3>
+        </div>
+        <button class="modal-close-btn" id="btn-close-email-modal" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem; background-color: #f1f5f9;">
+        <div class="email-headers" style="background: white; border: 1px solid var(--border-card); border-radius: 0.5rem; padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 0.8rem; line-height: 1.5; color: var(--text-secondary);">
+          <p style="margin: 0 0 0.2rem 0;"><strong>From:</strong> Perenti Tickets &lt;tickets@perenti.com&gt;</p>
+          <p style="margin: 0 0 0.2rem 0;"><strong>To:</strong> <span id="email-to-display">user@domain.com</span></p>
+          <p style="margin: 0 0 0.2rem 0;"><strong>Subject:</strong> Confirmation: Your Passes for Ebc 28th Meetup (Offline Payment)</p>
+          <p style="margin: 0;"><strong>Date:</strong> <span id="email-date-display">Today</span></p>
+        </div>
+        <div class="email-body-content" style="background: white; border: 1px solid var(--border-card); border-radius: 0.5rem; padding: 1.5rem; font-family: 'Inter', sans-serif; font-size: 0.85rem; line-height: 1.5; color: #475569; max-height: 50vh; overflow-y: auto;">
+          <div style="text-align: center; margin-bottom: 1.25rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem;">
+            <span style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.6rem; background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-hover)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">perenti</span>
+            <p style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 0.15rem 0 0 0;">Booking Confirmation</p>
+          </div>
+          
+          <p style="margin: 0 0 0.75rem 0;">Hi there,</p>
+          <p style="margin: 0 0 0.75rem 0;">Thank you for booking your passes for the <strong>Ebc 28th Meetup</strong>! Since this event uses offline payment, your bookings have been successfully reserved. You can settle the ticket fee at the venue counter upon arrival.</p>
+          
+          <div style="background-color: var(--bg-info-card); border-left: 3px solid var(--brand-primary); padding: 0.75rem 1rem; border-radius: 0 0.5rem 0.5rem 0; margin: 1rem 0;">
+            <h4 style="margin: 0 0 0.35rem 0; color: var(--text-main); font-size: 0.9rem;">Event Details</h4>
+            <p style="margin: 0; font-size: 0.8rem;">📅 <strong>Date:</strong> Sunday, June 14, 2026</p>
+            <p style="margin: 0 0 0.15rem 0; font-size: 0.8rem;">⏰ <strong>Time:</strong> 9:00 AM - 11:00 AM (Asia/Kolkata)</p>
+            <p style="margin: 0; font-size: 0.8rem;">📍 <strong>Venue:</strong> Birch Cafe, Hyderabad</p>
+          </div>
+
+          <p style="margin: 0 0 1rem 0;">We've attached your <strong><span id="email-qty-display">1</span> Ticket Pass(es)</strong> below. You can also view or print them at any time by logging into your <a href="user-dashboard.html" style="color: var(--brand-primary); font-weight: 600; text-decoration: none;">Perenti Tickets Hub</a>.</p>
+          
+          <div id="email-tickets-list" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+            <!-- stubs inline in email -->
+          </div>
+
+          <div style="margin-top: 1.5rem; border-top: 1px solid #f1f5f9; padding-top: 0.75rem; text-align: center; font-size: 0.75rem; color: var(--text-muted);">
+            <p style="margin: 0 0 0.2rem 0;">Need help? Contact support at support@perenti.com.</p>
+            <p style="margin: 0;">© 2026 Perenti Inc. Smart Events, Seamless Outcomes.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
