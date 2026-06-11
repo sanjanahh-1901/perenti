@@ -153,6 +153,7 @@
 
       const urlParams = new URLSearchParams(window.location.search);
       const redirectQty = urlParams.get('qty');
+      const redirectUrl = urlParams.get('redirect');
 
       signupForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -203,6 +204,8 @@
         } else {
           if (redirectQty && parseInt(redirectQty) > 0) {
             bookTicketsForUser(email, parseInt(redirectQty), 'offline');
+          } else if (redirectUrl) {
+            window.location.href = redirectUrl;
           } else {
             window.location.href = 'user-dashboard.html';
           }

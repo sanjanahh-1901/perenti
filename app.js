@@ -304,8 +304,138 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeSummaryModalBtn = document.getElementById('btn-close-summary-modal');
   const detailsRegisterBtn = document.getElementById('btn-details-register');
 
+  const authChoiceModal = document.getElementById('auth-choice-modal');
+  const closeAuthChoiceModalBtn = document.getElementById('btn-close-auth-choice-modal');
+  const authSigninBtn = document.getElementById('btn-auth-signin');
+  const authSignupBtn = document.getElementById('btn-auth-signup');
+
+  const checkoutLoginModal = document.getElementById('checkout-login-modal');
+  const closeCheckoutModalBtn = document.getElementById('btn-close-checkout-modal');
+  const checkoutLoginForm = document.getElementById('checkout-login-form');
+  const checkoutLoginError = document.getElementById('checkout-login-error');
+  const checkoutMicrosoftBtn = document.querySelector('#checkout-login-modal #btn-microsoft-login');
+
   if (detailsRegisterBtn) {
     detailsRegisterBtn.addEventListener('click', () => {
+      if (session) {
+        // Logged In: Proceed directly
+        if (registrationSummaryModal) {
+          updateCalculations();
+          registrationSummaryModal.classList.remove('hidden');
+        }
+      } else {
+        // Logged Out: Show Sign In / Create Account choice modal
+        if (authChoiceModal) {
+          authChoiceModal.classList.remove('hidden');
+        }
+      }
+    });
+  }
+
+  // Handle Auth Choice Modal buttons
+  if (closeAuthChoiceModalBtn && authChoiceModal) {
+    closeAuthChoiceModalBtn.addEventListener('click', () => {
+      authChoiceModal.classList.add('hidden');
+    });
+  }
+
+  if (authSigninBtn) {
+    authSigninBtn.addEventListener('click', () => {
+      if (authChoiceModal) authChoiceModal.classList.add('hidden');
+      if (checkoutLoginModal) {
+        if (checkoutLoginError) checkoutLoginError.classList.add('hidden');
+        checkoutLoginModal.classList.remove('hidden');
+      }
+    });
+  }
+
+  if (authSignupBtn) {
+    authSignupBtn.addEventListener('click', () => {
+      if (authChoiceModal) authChoiceModal.classList.add('hidden');
+      window.location.href = 'signup.html?redirect=index.html';
+    });
+  }
+
+  // Handle Checkout Login Modal close
+  if (closeCheckoutModalBtn && checkoutLoginModal) {
+    closeCheckoutModalBtn.addEventListener('click', () => {
+      checkoutLoginModal.classList.add('hidden');
+      if (checkoutLoginForm) checkoutLoginForm.reset();
+    });
+  }
+
+  // Handle Checkout Login Form submit inline
+  if (checkoutLoginForm) {
+    checkoutLoginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (checkoutLoginError) checkoutLoginError.classList.add('hidden');
+
+      const emailInput = document.querySelector('#checkout-login-modal #login-email');
+      const passwordInput = document.querySelector('#checkout-login-modal #login-password');
+      if (!emailInput || !passwordInput) return;
+
+      const email = emailInput.value.trim().toLowerCase();
+      const password = passwordInput.value;
+
+      let users = [];
+      try {
+        users = JSON.parse(localStorage.getItem('users')) || [];
+      } catch (e) {
+        console.error("Error parsing users:", e);
+      }
+      const user = users.find(u => u.email === email && u.password === password);
+
+      if (user) {
+        // Store session
+        session = { email: user.email, role: user.role };
+        localStorage.setItem('currentUser', JSON.stringify(session));
+
+        // Update session UI globally on the page
+        updateHeaderSessionUI();
+
+        // Close login modal
+        checkoutLoginModal.classList.add('hidden');
+        checkoutLoginForm.reset();
+
+        // Proceed directly to the registration summary modal
+        if (registrationSummaryModal) {
+          updateCalculations();
+          registrationSummaryModal.classList.remove('hidden');
+        }
+      } else {
+        if (checkoutLoginError) checkoutLoginError.classList.remove('hidden');
+      }
+    });
+  }
+
+  // Handle Microsoft SSO button in Checkout Login Modal inline
+  if (checkoutMicrosoftBtn) {
+    checkoutMicrosoftBtn.addEventListener('click', () => {
+      const microsoftUser = { email: 'entra.builder@microsoft.com', role: 'user' };
+      
+      // Save to users list if new
+      let users = [];
+      try {
+        users = JSON.parse(localStorage.getItem('users')) || [];
+      } catch (e) {
+        console.error("Error parsing users:", e);
+      }
+      if (!users.some(u => u.email === microsoftUser.email)) {
+        users.push({ email: microsoftUser.email, password: 'password', role: 'user' });
+        localStorage.setItem('users', JSON.stringify(users));
+      }
+
+      session = microsoftUser;
+      localStorage.setItem('currentUser', JSON.stringify(session));
+
+      // Update session UI globally
+      updateHeaderSessionUI();
+
+      // Close login modal
+      if (checkoutLoginModal) checkoutLoginModal.classList.add('hidden');
+      if (checkoutLoginForm) checkoutLoginForm.reset();
+
+      // Proceed directly to the registration summary modal
       if (registrationSummaryModal) {
         updateCalculations();
         registrationSummaryModal.classList.remove('hidden');
@@ -323,7 +453,6 @@ document.addEventListener('DOMContentLoaded', () => {
     registerSubmitBtn.addEventListener('click', () => {
       if (quantity <= 0) return;
 
-      // Close summary modal
       if (registrationSummaryModal) {
         registrationSummaryModal.classList.add('hidden');
       }
@@ -333,12 +462,9 @@ document.addEventListener('DOMContentLoaded', () => {
           alert("Event administrators cannot book passes. Please register or log in as a General User to proceed.");
           return;
         }
-        
-        // Logged-in general user: book immediately as offline
         const ticketIds = bookTicketsForUser(session.email, quantity, 'offline', false);
         showRegistrationSuccess(session.email, ticketIds);
       } else {
-        // Guest: redirect to login
         window.location.href = `login.html?qty=${quantity}&payment=offline`;
       }
     });
@@ -368,7 +494,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <span class="ticket-status-tag unused">Unused</span>
               </div>
-              
               <div class="ticket-stub-main">
                 <h4 class="stub-event-title">Ebc 28th Meetup</h4>
                 <div class="stub-event-grid">
@@ -376,7 +501,6 @@ document.addEventListener('DOMContentLoaded', () => {
                   <p class="stub-event-meta"><strong>Time:</strong> 9:00 AM - 11:00 AM (Asia/Kolkata)</p>
                   <p class="stub-event-meta"><strong>Venue:</strong> Birch Cafe, Hyderabad</p>
                 </div>
-                
                 <div class="stub-user-info">
                   <p><strong>Attendee:</strong> <span>${email}</span></p>
                   <p><strong>Ticket ID:</strong> <span class="monospaced-code">${id}</span></p>
@@ -384,13 +508,11 @@ document.addEventListener('DOMContentLoaded', () => {
                   <p><strong>Payment Status:</strong> <span style="color: #d97706; font-weight: 600;">Offline Payment</span></p>
                 </div>
               </div>
-              
               <div class="ticket-stub-cut-divider">
                 <div class="cut-left"></div>
                 <div class="cut-line"></div>
                 <div class="cut-right"></div>
               </div>
-              
               <div class="ticket-stub-qr">
                 <img src="${qrUrl}" alt="Ticket QR Code" class="stub-qr-code-img">
                 <span class="qr-code-sub">Present this QR code to the organizer at the venue entrance.</span>
@@ -414,12 +536,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (viewEmailBtn && emailModal) {
       const newViewEmailBtn = viewEmailBtn.cloneNode(true);
       viewEmailBtn.parentNode.replaceChild(newViewEmailBtn, viewEmailBtn);
-      
       newViewEmailBtn.addEventListener('click', () => {
         document.getElementById('email-to-display').textContent = email;
         document.getElementById('email-date-display').textContent = new Date().toLocaleString();
         document.getElementById('email-qty-display').textContent = ticketIds.length;
-
         let listHtml = '';
         ticketIds.forEach((id, i) => {
           const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(id)}`;
@@ -446,7 +566,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Bind general close and print events
   const digitalTicketModal = document.getElementById('digital-ticket-modal');
   const closeTicketModalBtn = document.getElementById('btn-close-ticket-modal');
   const printTicketBtn = document.getElementById('btn-print-ticket');
@@ -467,12 +586,9 @@ document.addEventListener('DOMContentLoaded', () => {
   function bookTicketsForUser(email, qty, paymentType = 'offline', redirect = true) {
     const tickets = JSON.parse(localStorage.getItem('tickets')) || [];
     const orderNum = Math.floor(10000 + Math.random() * 90000);
-    
-    // Deduct stock
     ticketsRemaining = Math.max(0, ticketsRemaining - qty);
     localStorage.setItem('ticketsRemaining', ticketsRemaining);
     updateTicketsRemainingDisplay();
-
     const newTicketIds = [];
     for (let i = 1; i <= qty; i++) {
       const ticketIdStr = `PRNT-EBC28-${orderNum}-${i}`;
@@ -486,16 +602,12 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       newTicketIds.push(ticketIdStr);
     }
-
     localStorage.setItem('tickets', JSON.stringify(tickets));
     localStorage.setItem('lastGeneratedTickets', JSON.stringify(newTicketIds));
     localStorage.setItem('justBookedQty', qty);
     localStorage.setItem('justBookedEmail', email);
-
-    // Reset stepper
     quantity = 0;
     updateCalculations();
-
     if (redirect) {
       window.location.href = 'user-dashboard.html';
     } else {

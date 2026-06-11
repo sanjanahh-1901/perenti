@@ -170,6 +170,7 @@
 
       const urlParams = new URLSearchParams(window.location.search);
       const redirectQty = urlParams.get('qty');
+      const redirectUrl = urlParams.get('redirect');
 
       loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -196,6 +197,8 @@
           } else {
             if (redirectQty && parseInt(redirectQty) > 0) {
               bookTicketsForUser(user.email, parseInt(redirectQty), 'offline');
+            } else if (redirectUrl) {
+              window.location.href = redirectUrl;
             } else {
               window.location.href = 'user-dashboard.html';
             }
@@ -222,6 +225,8 @@
 
         if (redirectQty && parseInt(redirectQty) > 0) {
           bookTicketsForUser(microsoftUser.email, parseInt(redirectQty), 'offline');
+        } else if (redirectUrl) {
+          window.location.href = redirectUrl;
         } else {
           window.location.href = 'user-dashboard.html';
         }
