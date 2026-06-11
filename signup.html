@@ -141,7 +141,27 @@
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyB7FBluJ3ybc1FyB-3kzh5Gnf68aSR5sUM",
+      authDomain: "perenti-app.firebaseapp.com",
+      projectId: "perenti-app",
+      storageBucket: "perenti-app.firebasestorage.app",
+      messagingSenderId: "136634053807",
+      appId: "1:136634053807:web:f31bb498a6feefa28d105a"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Auto-redirect 127.0.0.1 to localhost to avoid Firebase unauthorized domain error
+    if (window.location.hostname === '127.0.0.1') {
+      window.location.hostname = 'localhost';
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const signupForm = document.getElementById('signup-form');
       const emailInput = document.getElementById('signup-email');
@@ -155,11 +175,11 @@
       const redirectQty = urlParams.get('qty');
       const redirectUrl = urlParams.get('redirect');
 
-      signupForm.addEventListener('submit', (e) => {
+      signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         errorAlert.classList.add('hidden');
 
-        const email = emailInput.value.trim().toLowerCase();
+        const email = emailInput.value.trim();
         const password = passwordInput.value;
         const confirmPassword = confirmInput.value;
         const role = roleSelect.value;
@@ -170,45 +190,35 @@
           return;
         }
 
-        // Check exists
-        let users = [];
         try {
-          users = JSON.parse(localStorage.getItem('users')) || [
-            { email: 'nikhila@google.com', password: 'password', role: 'user' },
-            { email: 'admin@perenti.com', password: 'password', role: 'admin' }
-          ];
-        } catch (e) {
-          console.error("Error parsing users:", e);
-          users = [
-            { email: 'nikhila@google.com', password: 'password', role: 'user' },
-            { email: 'admin@perenti.com', password: 'password', role: 'admin' }
-          ];
-        }
+          // Register user in Firebase Auth
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          const user = userCredential.user;
 
-        if (users.some(u => u.email === email)) {
-          errorText.textContent = 'An account with this email already exists.';
-          errorAlert.classList.remove('hidden');
-          return;
-        }
+          // Save role mapping
+          const roles = JSON.parse(localStorage.getItem('userRoles')) || {};
+          roles[user.email] = role;
+          localStorage.setItem('userRoles', JSON.stringify(roles));
 
-        // Register user
-        users.push({ email, password, role });
-        localStorage.setItem('users', JSON.stringify(users));
+          // Create session
+          localStorage.setItem('currentUser', JSON.stringify({ email: user.email, role }));
 
-        // Create session
-        localStorage.setItem('currentUser', JSON.stringify({ email, role }));
-
-        // Redirect
-        if (role === 'admin') {
-          window.location.href = 'admin-dashboard.html';
-        } else {
-          if (redirectQty && parseInt(redirectQty) > 0) {
-            bookTicketsForUser(email, parseInt(redirectQty), 'offline');
-          } else if (redirectUrl) {
-            window.location.href = redirectUrl;
+          // Redirect
+          if (role === 'admin') {
+            window.location.href = 'admin-dashboard.html';
           } else {
-            window.location.href = 'user-dashboard.html';
+            if (redirectQty && parseInt(redirectQty) > 0) {
+              bookTicketsForUser(user.email, parseInt(redirectQty), 'offline');
+            } else if (redirectUrl) {
+              window.location.href = redirectUrl;
+            } else {
+              window.location.href = 'user-dashboard.html';
+            }
           }
+        } catch (error) {
+          console.error("Error signing up:", error);
+          errorText.textContent = error.message;
+          errorAlert.classList.remove('hidden');
         }
       });
 
