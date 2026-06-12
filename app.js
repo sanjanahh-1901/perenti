@@ -339,10 +339,8 @@ document.addEventListener('DOMContentLoaded', () => {
           registrationSummaryModal.classList.remove('hidden');
         }
       } else {
-        // Logged Out: Show Sign In / Create Account choice modal
-        if (authChoiceModal) {
-          authChoiceModal.classList.remove('hidden');
-        }
+        // Logged Out: Redirect directly to login page with redirect back to index
+        window.location.href = 'login.html?redirect=index.html';
       }
     });
   }
