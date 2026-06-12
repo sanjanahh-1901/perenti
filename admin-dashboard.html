@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=17">
   <style>
     .dashboard-page-wrapper {
       min-height: 100vh;
@@ -17,7 +17,7 @@
     }
     .admin-main-content {
       flex: 1;
-      max-width: 1100px;
+      max-width: 1200px;
       width: 100%;
       margin: 0 auto;
       padding: 2.5rem 1.5rem;
@@ -47,6 +47,10 @@
       grid-template-columns: 1fr;
       gap: 2rem;
       margin-top: 0.5rem;
+      align-items: start;
+    }
+    .admin-grid-layout > * {
+      min-width: 0;
     }
     @media (min-width: 992px) {
       .admin-grid-layout {
@@ -76,7 +80,9 @@
       gap: 0.5rem;
     }
     .checked-in-list-container {
-      height: 380px;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
     }
     .badge-status {
       font-size: 0.7rem;
@@ -183,7 +189,7 @@
     <div class="admin-grid-layout">
       
       <!-- Left Column: Scanner & Announcements -->
-      <div style="display: flex; flex-direction: column; gap: 2rem;">
+      <div id="admin-left-col" style="display: flex; flex-direction: column; gap: 2rem;">
         
         <!-- Left: Simulator Scanner Viewport -->
         <div class="admin-panel-box">
@@ -231,11 +237,64 @@
           </button>
         </div>
 
+        <!-- Left: Form Builder Box -->
+        <div class="admin-panel-box">
+          <h3 class="admin-panel-title">Custom Registration Form</h3>
+          <p class="panel-section-subtitle" style="margin-bottom: 0.75rem;">Configure the questions asked to attendees when they register.</p>
+          
+          <div id="form-builder-questions-list" style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem;">
+            <!-- Rendered questions will appear here -->
+          </div>
+
+          <div style="background: var(--bg-info-card); border: 1px solid var(--border-input); border-radius: 0.5rem; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+            <h4 style="font-size: 0.9rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.25rem;">Add New Question</h4>
+            <div class="form-group">
+              <label class="form-label" style="font-size: 0.8rem;">Question Label</label>
+              <input type="text" id="fb-new-label" class="form-control" placeholder="e.g. What is your role?" style="font-size: 0.85rem;">
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label" style="font-size: 0.8rem;">Type</label>
+              <select id="fb-new-type" class="form-control" style="font-size: 0.85rem;">
+                <option value="text">Short Text</option>
+                <option value="textarea">Long Text</option>
+                <option value="radio">Multiple Choice (Radio)</option>
+                <option value="select">Dropdown</option>
+                <option value="toggle">Yes/No Toggle</option>
+              </select>
+            </div>
+            
+            <div class="form-group" id="fb-new-options-group" style="display: none;">
+              <label class="form-label" style="font-size: 0.8rem;">Options (comma separated)</label>
+              <input type="text" id="fb-new-options" class="form-control" placeholder="e.g. Founder, Student, Investor" style="font-size: 0.85rem;">
+            </div>
+
+            <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+              <input type="checkbox" id="fb-new-required" style="width: 1rem; height: 1rem; cursor: pointer;">
+              <label for="fb-new-required" class="form-label" style="margin: 0; font-size: 0.8rem; cursor: pointer;">Required Question</label>
+            </div>
+
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-fb-add-question" style="margin-top: 0.5rem;">+ Add Question</button>
+          </div>
+
+          <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-fb-save-form" style="margin-top: 0.5rem;">
+            Save Form Configuration
+          </button>
+        </div>
+
       </div>
 
       <!-- Right: Searchable Registrations Table -->
-      <div class="admin-panel-box">
-        <h3 class="admin-panel-title">RSVP & Registration Search</h3>
+      <div class="admin-panel-box" id="admin-rsvp-box">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--divider); padding-bottom: 0.75rem; margin-bottom: 0.25rem; flex-wrap: wrap; gap: 0.75rem;">
+          <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin: 0; font-family: 'Outfit', sans-serif;">RSVP & Registration Search</h3>
+          
+          <!-- View Segment Tabs -->
+          <div class="view-tabs" style="display: flex; gap: 0.25rem; background: var(--bg-info-card); padding: 0.25rem; border-radius: 0.5rem; border: 1px solid var(--border-card); margin-left: auto;">
+            <button type="button" id="tab-all-registrations" style="font-size: 0.75rem; padding: 0.35rem 0.75rem; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer; transition: all 0.2s; background: var(--brand-primary); color: #ffffff; font-family: inherit;">All Registrations</button>
+            <button type="button" id="tab-post-event-attendees" style="font-size: 0.75rem; padding: 0.35rem 0.75rem; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--text-secondary); font-family: inherit;">Post-Event Attendees (Checked-In)</button>
+          </div>
+        </div>
         
         <div class="search-filter-row" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
           <input type="text" id="attendee-search-input" class="form-control" placeholder="Search by email or Ticket ID..." style="flex: 1; min-width: 180px;">
@@ -253,20 +312,24 @@
             <option value="rejected">Rejected</option>
           </select>
           
-          <button type="button" class="btn btn-secondary btn-sm" id="btn-export-csv" style="padding: 0.5rem 0.75rem; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem; border-radius: 0.375rem; cursor: pointer; background-color: var(--bg-info-card); border: 1px solid var(--border-card); color: var(--text-main);">
-            📥 Export CSV
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-export-csv" style="padding: 0.5rem 0.75rem; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem; border-radius: 0.375rem; cursor: pointer; background-color: var(--bg-info-card); border: 1px solid var(--border-card); color: var(--text-main);" title="Export registrations matching current search, status, and approval filters">
+            📥 Export Filtered CSV
+          </button>
+          
+          <button type="button" class="btn btn-primary btn-sm" id="btn-export-attendees-csv" style="padding: 0.5rem 0.75rem; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem; border-radius: 0.375rem; cursor: pointer; background-color: var(--brand-primary); border: 1px solid var(--brand-primary); color: #ffffff;" title="Export only checked-in attendees who attended the meetup post-event">
+            📥 Export Checked-In
           </button>
         </div>
 
-        <div class="checked-in-list-container" style="height: 681px; overflow-y: auto;">
+        <div class="checked-in-list-container" style="flex: 1; min-height: 0; overflow: auto;">
           <table class="attendees-table">
             <thead>
               <tr>
-                <th>Email</th>
-                <th>Ticket ID</th>
-                <th>Status</th>
-                <th>Approval</th>
-                <th>Action</th>
+                <th style="padding: 0.75rem 1rem;">Email</th>
+                <th style="padding: 0.75rem 1rem;">Ticket ID</th>
+                <th style="padding: 0.75rem 1rem;">Status</th>
+                <th style="padding: 0.75rem 1rem;">Approval</th>
+                <th style="padding: 0.75rem 1rem;">Action</th>
               </tr>
             </thead>
             <tbody id="attendees-list-body">
@@ -370,58 +433,49 @@
           const isChecked = t.status === 'checked-in';
           const approval = t.approval || 'approved';
           
-          const statusBadge = `<span class="badge-status ${isChecked ? 'checked-in' : 'unused'}">${isChecked ? 'Checked In' : 'Unused'}</span>`;
+          const statusBadge = `<span class="badge-status ${isChecked ? 'checked-in' : 'unused'}" style="white-space: nowrap;">${isChecked ? 'Checked In' : 'Unused'}</span>`;
           
-          let approvalBadgeClass = 'unused';
-          if (approval === 'approved') approvalBadgeClass = 'checked-in';
-          
-          const approvalBadgeStyle = approval === 'rejected' 
-            ? 'background-color: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.2);' 
-            : '';
-            
-          const approvalBadge = `<span class="badge-status ${approvalBadgeClass}" style="${approvalBadgeStyle}">${approval.toUpperCase()}</span>`;
-          
-          let actionCell = '';
-          if (isChecked) {
-            actionCell = `<span style="color: var(--text-muted); font-size: 0.75rem;">Checked-in ${t.timestamp.split(',')[1] || t.timestamp}</span>`;
-          } else if (approval === 'approved') {
-            actionCell = `<button type="button" class="btn-action-checkin" onclick="triggerManualCheckinFromTable('${t.id}')">Check In</button>`;
-          } else if (approval === 'pending') {
-            actionCell = `<span style="color: var(--text-muted); font-size: 0.75rem;">Pending Approval</span>`;
+          let approvalBadgeStyle = '';
+          if (approval === 'approved') {
+            approvalBadgeStyle = 'background-color: rgba(16, 185, 129, 0.1); color: #059669; border: 1px solid rgba(16, 185, 129, 0.2);';
+          } else if (approval === 'rejected') {
+            approvalBadgeStyle = 'background-color: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.2);';
           } else {
-            actionCell = `<span style="color: var(--text-muted); font-size: 0.75rem; text-decoration: line-through;">Rejected</span>`;
+            approvalBadgeStyle = 'background-color: rgba(245, 158, 11, 0.1); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.2);';
           }
+          const approvalBadge = `<span class="badge-status" style="white-space: nowrap; ${approvalBadgeStyle}">${approval.toUpperCase()}</span>`;
           
-          // Add Approve/Reject action buttons
-          let approvalActions = '';
+          // Action buttons
+          let actionCellHtml = `<div style="display: flex; gap: 0.5rem; align-items: center; white-space: nowrap;">`;
           if (approval === 'pending') {
-            approvalActions = `
-              <div style="display: flex; gap: 0.25rem;">
-                <button type="button" class="btn-action-checkin" style="background-color: #10b981; font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="triggerApproveAttendee('${t.id}')">Approve</button>
-                <button type="button" class="btn-action-checkin" style="background-color: #ef4444; font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="triggerRejectAttendee('${t.id}')">Reject</button>
-              </div>
+            actionCellHtml += `
+              <button type="button" class="btn-action-checkin" style="background-color: #10b981;" onclick="triggerApproveAttendee('${t.id}')">Approve</button>
+              <button type="button" class="btn-action-checkin" style="background-color: transparent; border: 1px solid #ef4444; color: #ef4444;" onclick="triggerRejectAttendee('${t.id}')">Reject</button>
             `;
-          } else if (approval === 'approved') {
-            approvalActions = `
-              <button type="button" class="btn-action-checkin" style="background-color: #ef4444; font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="triggerRejectAttendee('${t.id}')">Reject</button>
+          } else if (approval === 'approved' && !isChecked) {
+            actionCellHtml += `
+              <button type="button" class="btn-action-checkin" style="background-color: var(--brand-primary);" onclick="triggerManualCheckinFromTable('${t.id}')">Check In</button>
+              <button type="button" class="btn-action-checkin" style="background-color: transparent; border: 1px solid #ef4444; color: #ef4444;" onclick="triggerRejectAttendee('${t.id}')">Reject</button>
             `;
-          } else {
-            approvalActions = `
-              <button type="button" class="btn-action-checkin" style="background-color: #10b981; font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="triggerApproveAttendee('${t.id}')">Approve</button>
+          } else if (approval === 'approved' && isChecked) {
+            const timeStr = t.timestamp.split(',')[1] || t.timestamp;
+            actionCellHtml += `
+              <span style="color: var(--text-muted); font-size: 0.75rem; font-weight: 500; margin-right: 0.25rem;">Checked-in ${timeStr}</span>
+              <button type="button" class="btn-action-checkin" style="background-color: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 0.15rem 0.4rem; font-size: 0.65rem;" onclick="triggerRejectAttendee('${t.id}')">Reject</button>
+            `;
+          } else if (approval === 'rejected') {
+            actionCellHtml += `
+              <button type="button" class="btn-action-checkin" style="background-color: #10b981;" onclick="triggerApproveAttendee('${t.id}')">Approve</button>
             `;
           }
-
+          actionCellHtml += `</div>`;
+          
           row.innerHTML = `
-            <td style="font-weight: 500; font-size: 0.85rem;">${t.email}</td>
-            <td><span class="monospaced-code" style="font-size:0.75rem;">${t.id}</span></td>
-            <td>${statusBadge}</td>
-            <td>${approvalBadge}</td>
-            <td>
-              <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                ${actionCell}
-                ${approvalActions}
-              </div>
-            </td>
+            <td style="padding: 0.75rem 1rem; white-space: nowrap;"><a href="#" onclick="showAttendeeDetails('${t.id}'); return false;" style="color: var(--brand-primary); font-weight: 600; text-decoration: none; border-bottom: 1px dashed var(--brand-primary);">${t.email}</a></td>
+            <td style="padding: 0.75rem 1rem; white-space: nowrap;"><span class="monospaced-code" style="font-size:0.75rem;">${t.id}</span></td>
+            <td style="padding: 0.75rem 1rem; white-space: nowrap;">${statusBadge}</td>
+            <td style="padding: 0.75rem 1rem; white-space: nowrap;">${approvalBadge}</td>
+            <td style="padding: 0.75rem 1rem; white-space: nowrap;">${actionCellHtml}</td>
           `;
           attendeesListBody.appendChild(row);
         });
@@ -556,38 +610,143 @@
       document.getElementById('filter-status-select').addEventListener('change', updateDashboard);
       document.getElementById('filter-approval-select').addEventListener('change', updateDashboard);
 
-      // Export CSV click listener
+      // View segment tabs styling & listeners
+      const tabAll = document.getElementById('tab-all-registrations');
+      const tabPostEvent = document.getElementById('tab-post-event-attendees');
+      const filterStatusSelect = document.getElementById('filter-status-select');
+
+      function setActiveTab(tab) {
+        if (!tabAll || !tabPostEvent) return;
+        if (tab === 'all') {
+          tabAll.style.background = 'var(--brand-primary)';
+          tabAll.style.color = '#ffffff';
+          tabPostEvent.style.background = 'transparent';
+          tabPostEvent.style.color = 'var(--text-secondary)';
+        } else if (tab === 'checked-in') {
+          tabPostEvent.style.background = 'var(--brand-primary)';
+          tabPostEvent.style.color = '#ffffff';
+          tabAll.style.background = 'transparent';
+          tabAll.style.color = 'var(--text-secondary)';
+        }
+      }
+
+      if (tabAll && tabPostEvent && filterStatusSelect) {
+        tabAll.addEventListener('click', () => {
+          filterStatusSelect.value = 'all';
+          setActiveTab('all');
+          updateDashboard();
+        });
+
+        tabPostEvent.addEventListener('click', () => {
+          filterStatusSelect.value = 'checked-in';
+          setActiveTab('checked-in');
+          updateDashboard();
+        });
+
+        filterStatusSelect.addEventListener('change', (e) => {
+          if (e.target.value === 'checked-in') {
+            setActiveTab('checked-in');
+          } else {
+            setActiveTab('all');
+          }
+        });
+      }
+
+      // Helper function to export any array of tickets to CSV
+      function exportTicketsToCsv(ticketsToExport, filename) {
+        if (ticketsToExport.length === 0) {
+          showCheckinError("Error: No registrations match the export criteria!");
+          return;
+        }
+
+        // Extract all unique question labels from all tickets
+        const allQuestionLabels = new Set();
+        ticketsToExport.forEach(t => {
+          if (t.answers) {
+            Object.keys(t.answers).forEach(label => {
+              allQuestionLabels.add(label);
+            });
+          }
+        });
+        const labelsArray = Array.from(allQuestionLabels);
+
+        // Build CSV content
+        let csvContent = "\ufeff"; // BOM for Excel UTF-8 support
+        
+        // Headers
+        csvContent += "Email,Ticket ID,Ticket Status,Approval Status,Payment,Timestamp";
+        labelsArray.forEach(label => {
+          const escapedLabel = label.replace(/"/g, '""');
+          csvContent += `,"${escapedLabel}"`;
+        });
+        csvContent += "\n";
+
+        // Rows
+        ticketsToExport.forEach(t => {
+          const email = t.email;
+          const id = t.id;
+          const status = t.status;
+          const approval = t.approval || 'approved';
+          const payment = t.payment || 'offline';
+          const timestamp = (t.timestamp || '').replace(/"/g, '""');
+
+          let rowStr = `"${email}","${id}","${status}","${approval}","${payment}","${timestamp}"`;
+          
+          labelsArray.forEach(label => {
+            const answer = (t.answers && t.answers[label] !== undefined) ? String(t.answers[label]) : '';
+            const escapedAnswer = answer.replace(/"/g, '""');
+            rowStr += `,"${escapedAnswer}"`;
+          });
+          
+          csvContent += rowStr + "\n";
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+
+      // Export CSV click listeners
       const exportCsvBtn = document.getElementById('btn-export-csv');
       if (exportCsvBtn) {
         exportCsvBtn.addEventListener('click', () => {
           const tickets = JSON.parse(localStorage.getItem('tickets')) || [];
-          if (tickets.length === 0) {
-            showCheckinError("Error: No registrations available to export!");
+          const statusFilter = document.getElementById('filter-status-select').value;
+          const approvalFilter = document.getElementById('filter-approval-select').value;
+          const query = searchFilter.toLowerCase();
+
+          const filteredTickets = tickets.filter(t => {
+            const matchesSearch = t.email.toLowerCase().includes(query) || t.id.toLowerCase().includes(query);
+            const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
+            const approval = t.approval || 'approved';
+            const matchesApproval = approvalFilter === 'all' || approval === approvalFilter;
+            return matchesSearch && matchesStatus && matchesApproval;
+          });
+
+          exportTicketsToCsv(filteredTickets, 'ebc_registrations_filtered.csv');
+          showCheckinSuccess("Filtered attendee list CSV downloaded successfully!");
+        });
+      }
+
+      const exportAttendeesCsvBtn = document.getElementById('btn-export-attendees-csv');
+      if (exportAttendeesCsvBtn) {
+        exportAttendeesCsvBtn.addEventListener('click', () => {
+          const tickets = JSON.parse(localStorage.getItem('tickets')) || [];
+          const checkedInTickets = tickets.filter(t => t.status === 'checked-in');
+          
+          if (checkedInTickets.length === 0) {
+            showCheckinError("Error: No checked-in attendees available to export!");
             return;
           }
 
-          let csvContent = "data:text/csv;charset=utf-8,";
-          csvContent += "Email,Ticket ID,Ticket Status,Approval Status,Payment,Timestamp\n";
-
-          tickets.forEach(t => {
-            const email = t.email;
-            const id = t.id;
-            const status = t.status;
-            const approval = t.approval || 'approved';
-            const payment = t.payment || 'offline';
-            const timestamp = (t.timestamp || '').replace(/"/g, '""');
-
-            csvContent += `"${email}","${id}","${status}","${approval}","${payment}","${timestamp}"\n`;
-          });
-
-          const encodedUri = encodeURI(csvContent);
-          const link = document.createElement("a");
-          link.setAttribute("href", encodedUri);
-          link.setAttribute("download", "perenti_attendees.csv");
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          showCheckinSuccess("Attendee list CSV downloaded successfully!");
+          exportTicketsToCsv(checkedInTickets, 'ebc_post_event_attendees.csv');
+          showCheckinSuccess("Post-event attendee list CSV downloaded successfully!");
         });
       }
 
@@ -613,9 +772,224 @@
         window.location.href = 'index.html';
       });
 
+      // =========================================================
+      // Form Builder Logic
+      // =========================================================
+      const defaultFormConfig = [
+        { id: 'q-building', type: 'text', label: 'What are you building?', required: true },
+        { id: 'q-about', type: 'textarea', label: 'Tell us about yourself', required: true },
+        { id: 'q-role', type: 'radio', label: 'Role', required: true, options: 'Founder,Student,Investor,Professional' },
+        { id: 'q-industry', type: 'select', label: 'Industry', required: true, options: 'Technology,Finance,Healthcare,Education,Other' },
+        { id: 'q-linkedin', type: 'text', label: 'LinkedIn URL (Optional)', required: false },
+        { id: 'q-instagram', type: 'text', label: 'Instagram URL (Optional)', required: false },
+        { id: 'q-website', type: 'text', label: 'Personal Website (Optional)', required: false },
+        { id: 'q-cofounder', type: 'toggle', label: 'Looking for Co-founder?', required: false }
+      ];
+
+      let formConfig = JSON.parse(localStorage.getItem('customRegistrationForm'));
+      if (!formConfig || formConfig.length === 0) {
+        formConfig = defaultFormConfig;
+      }
+
+      const fbQuestionsList = document.getElementById('form-builder-questions-list');
+      const fbTypeSelect = document.getElementById('fb-new-type');
+      const fbOptionsGroup = document.getElementById('fb-new-options-group');
+      const btnFbAdd = document.getElementById('btn-fb-add-question');
+      const btnFbSave = document.getElementById('btn-fb-save-form');
+
+      // Toggle options input visibility
+      fbTypeSelect.addEventListener('change', (e) => {
+        if (e.target.value === 'radio' || e.target.value === 'select') {
+          fbOptionsGroup.style.display = 'block';
+        } else {
+          fbOptionsGroup.style.display = 'none';
+        }
+      });
+
+      function renderFormBuilderList() {
+        if (!fbQuestionsList) return;
+        fbQuestionsList.innerHTML = '';
+        formConfig.forEach((q, index) => {
+          const item = document.createElement('div');
+          item.style.cssText = 'background: #fff; border: 1px solid var(--border-card); border-radius: 0.375rem; padding: 0.75rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05);';
+          
+          let details = `<div style="font-size: 0.85rem;"><strong style="color: var(--text-main);">${q.label}</strong> <span style="color: var(--text-muted); font-size: 0.75rem;">(${q.type})</span>`;
+          if (q.required) {
+            details += ` <span style="color: #ef4444; font-size: 0.75rem; font-weight: 600;">*Required</span>`;
+          }
+          if (q.options) {
+            details += `<br><span style="color: var(--text-secondary); font-size: 0.75rem;">Options: ${q.options}</span>`;
+          }
+          details += `</div>`;
+
+          const actions = `
+            <button type="button" class="btn btn-secondary btn-sm btn-fb-delete" data-index="${index}" style="padding: 0.2rem 0.5rem; font-size: 0.7rem; color: #ef4444; border-color: #fca5a5; background: #fef2f2;">Delete</button>
+          `;
+
+          item.innerHTML = details + actions;
+          fbQuestionsList.appendChild(item);
+        });
+
+        // Attach delete handlers
+        document.querySelectorAll('.btn-fb-delete').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const idx = parseInt(e.target.getAttribute('data-index'), 10);
+            formConfig.splice(idx, 1);
+            renderFormBuilderList();
+          });
+        });
+      }
+
+      renderFormBuilderList();
+
+      btnFbAdd.addEventListener('click', () => {
+        const labelInput = document.getElementById('fb-new-label');
+        const typeInput = document.getElementById('fb-new-type');
+        const optionsInput = document.getElementById('fb-new-options');
+        const requiredInput = document.getElementById('fb-new-required');
+
+        const label = labelInput.value.trim();
+        const type = typeInput.value;
+        const options = optionsInput.value.trim();
+        const required = requiredInput.checked;
+
+        if (!label) {
+          showCheckinError("Question Label is required!");
+          return;
+        }
+        if ((type === 'radio' || type === 'select') && !options) {
+          showCheckinError("Options are required for Multiple Choice or Dropdown!");
+          return;
+        }
+
+        const id = 'q-custom-' + Date.now();
+        formConfig.push({ id, type, label, options, required });
+
+        // reset
+        labelInput.value = '';
+        typeInput.value = 'text';
+        optionsInput.value = '';
+        requiredInput.checked = false;
+        fbOptionsGroup.style.display = 'none';
+
+        renderFormBuilderList();
+      });
+
+      btnFbSave.addEventListener('click', () => {
+        localStorage.setItem('customRegistrationForm', JSON.stringify(formConfig));
+        showCheckinSuccess("Form configuration saved successfully!");
+      });
+      // =========================================================
+
+      // Attendee Details Modal Controls
+      const attendeeDetailsModal = document.getElementById('attendee-details-modal');
+      const closeDetailsModalBtn = document.getElementById('btn-close-details-modal');
+      const closeDetailsModalBottomBtn = document.getElementById('btn-close-details-modal-bottom');
+      const attendeeDetailsContent = document.getElementById('attendee-details-content');
+
+      window.showAttendeeDetails = function(tId) {
+        const tickets = JSON.parse(localStorage.getItem('tickets')) || [];
+        const ticket = tickets.find(t => t.id === tId);
+        if (!ticket) return;
+
+        let answersHtml = '';
+        if (ticket.answers && Object.keys(ticket.answers).length > 0) {
+          answersHtml = '<div style="margin-top: 1rem; border-top: 1px solid var(--divider); padding-top: 1rem;">';
+          answersHtml += '<h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text-main); font-family: \'Outfit\', sans-serif;">Attendee Registration Answers</h4>';
+          for (const [key, value] of Object.entries(ticket.answers)) {
+            answersHtml += `
+              <div style="margin-bottom: 0.75rem; background: var(--bg-info-card); padding: 0.6rem 0.75rem; border-radius: 0.375rem; border: 1px solid var(--border-card);">
+                <p style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.15rem; text-transform: uppercase; letter-spacing: 0.02em;">${key}</p>
+                <p style="font-size: 0.85rem; color: var(--text-main); font-weight: 500; word-break: break-word; white-space: pre-wrap; margin: 0;">${value || 'No answer provided.'}</p>
+              </div>
+            `;
+          }
+          answersHtml += '</div>';
+        } else {
+          answersHtml = `
+            <div style="margin-top: 1.25rem; border-top: 1px solid var(--divider); padding-top: 1.25rem; text-align: center; color: var(--text-muted); font-size: 0.82rem; font-style: italic;">
+              No custom question responses available for this attendee.
+            </div>
+          `;
+        }
+
+        const detailsHtml = `
+          <div style="display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.85rem; background: var(--bg-info-card); border: 1px solid var(--divider); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+            <p style="margin: 0;"><strong>Email:</strong> ${ticket.email}</p>
+            <p style="margin: 0;"><strong>Ticket ID:</strong> <span class="monospaced-code" style="font-size: 0.75rem; font-weight: 700; color: var(--brand-primary);">${ticket.id}</span></p>
+            <p style="margin: 0; display: flex; align-items: center; gap: 0.5rem;"><strong>Status:</strong> <span class="badge-status ${ticket.status === 'checked-in' ? 'checked-in' : 'unused'}" style="margin: 0;">${ticket.status === 'checked-in' ? 'Checked In' : 'Unused'}</span></p>
+            <p style="margin: 0; display: flex; align-items: center; gap: 0.5rem;"><strong>Approval:</strong> <span class="badge-status ${ticket.approval === 'rejected' ? '' : (ticket.approval === 'approved' ? 'checked-in' : 'unused')}" style="margin: 0; ${ticket.approval === 'rejected' ? 'background-color: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.2);' : ''}">${(ticket.approval || 'approved').toUpperCase()}</span></p>
+            <p style="margin: 0;"><strong>Payment Method:</strong> <span style="text-transform: capitalize;">${ticket.payment || 'offline'}</span></p>
+            <p style="margin: 0;"><strong>Booking Date:</strong> ${ticket.timestamp || '-'}</p>
+          </div>
+          ${answersHtml}
+        `;
+
+        attendeeDetailsContent.innerHTML = detailsHtml;
+        attendeeDetailsModal.classList.remove('hidden');
+      };
+
+      if (closeDetailsModalBtn) {
+        closeDetailsModalBtn.addEventListener('click', () => {
+          attendeeDetailsModal.classList.add('hidden');
+        });
+      }
+      if (closeDetailsModalBottomBtn) {
+        closeDetailsModalBottomBtn.addEventListener('click', () => {
+          attendeeDetailsModal.classList.add('hidden');
+        });
+      }
+
+      // Align RSVP Search table height to the left column dynamically
+      function alignRsvpHeight() {
+        const leftCol = document.getElementById('admin-left-col');
+        const rsvpBox = document.getElementById('admin-rsvp-box');
+        
+        if (leftCol && rsvpBox && window.innerWidth >= 992) {
+          rsvpBox.style.height = leftCol.offsetHeight + 'px';
+        } else if (rsvpBox) {
+          rsvpBox.style.height = 'auto';
+        }
+      }
+
+      // Run on layout events
+      window.addEventListener('resize', alignRsvpHeight);
+      window.addEventListener('load', alignRsvpHeight);
+      
+      // Observe size changes of left column (like form builder layout changes) to update right column height
+      if (typeof ResizeObserver !== 'undefined') {
+        const leftCol = document.getElementById('admin-left-col');
+        if (leftCol) {
+          const resizeObserver = new ResizeObserver(() => {
+            alignRsvpHeight();
+          });
+          resizeObserver.observe(leftCol);
+        }
+      }
+
       // Initial loading
       updateDashboard();
+      alignRsvpHeight();
     });
   </script>
+
+  <!-- Attendee Details Modal -->
+  <div class="modal-overlay hidden" id="attendee-details-modal">
+    <div class="modal-card" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 class="modal-title" style="font-family: 'Outfit', sans-serif;">Attendee Registration Details</h3>
+        <button class="modal-close-btn" id="btn-close-details-modal" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem; max-height: 80vh; overflow-y: auto;">
+        <div id="attendee-details-content">
+          <!-- Details content dynamically injected -->
+        </div>
+        
+        <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" id="btn-close-details-modal-bottom" style="padding: 0.5rem 1.5rem;">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

@@ -319,6 +319,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeSummaryModalBtn = document.getElementById('btn-close-summary-modal');
   const detailsRegisterBtn = document.getElementById('btn-details-register');
 
+  const registrationQuestionsModal = document.getElementById('registration-questions-modal');
+  const closeQuestionsModalBtn = document.getElementById('btn-close-questions-modal');
+  const backToSummaryBtn = document.getElementById('btn-back-to-summary');
+  const registrationQuestionsForm = document.getElementById('registration-questions-form');
+
   const authChoiceModal = document.getElementById('auth-choice-modal');
   const closeAuthChoiceModalBtn = document.getElementById('btn-close-auth-choice-modal');
   const authSigninBtn = document.getElementById('btn-auth-signin');
@@ -330,13 +335,102 @@ document.addEventListener('DOMContentLoaded', () => {
   const checkoutLoginError = document.getElementById('checkout-login-error');
   const checkoutGoogleBtn = document.querySelector('#checkout-login-modal #btn-google-login');
 
+  // Dynamic Form Rendering
+  const dynamicQuestionsContainer = document.getElementById('dynamic-questions-container');
+
+  const defaultFormConfig = [
+    { id: 'q-building', type: 'text', label: 'What are you building?', required: true },
+    { id: 'q-about', type: 'textarea', label: 'Tell us about yourself', required: true },
+    { id: 'q-role', type: 'radio', label: 'Role', required: true, options: 'Founder,Student,Investor,Professional' },
+    { id: 'q-industry', type: 'select', label: 'Industry', required: true, options: 'Technology,Finance,Healthcare,Education,Other' },
+    { id: 'q-linkedin', type: 'text', label: 'LinkedIn URL (Optional)', required: false },
+    { id: 'q-instagram', type: 'text', label: 'Instagram URL (Optional)', required: false },
+    { id: 'q-website', type: 'text', label: 'Personal Website (Optional)', required: false },
+    { id: 'q-cofounder', type: 'toggle', label: 'Looking for Co-founder?', required: false }
+  ];
+
+  function renderDynamicQuestions() {
+    if (!dynamicQuestionsContainer) return;
+    
+    let config = JSON.parse(localStorage.getItem('customRegistrationForm'));
+    if (!config || config.length === 0) {
+      config = defaultFormConfig;
+    }
+
+    let html = '';
+    config.forEach((q, idx) => {
+      const isReq = q.required ? '<span style="color: #ef4444;">*</span>' : '';
+      const reqAttr = q.required ? 'required' : '';
+      const uniqueId = q.id || `q-custom-${idx}`;
+      
+      if (q.type === 'text') {
+        html += `
+          <div class="form-group" style="margin-top: 0.5rem;">
+            <label for="${uniqueId}" class="form-label">${q.label} ${isReq}</label>
+            <input type="text" id="${uniqueId}" class="form-control" ${reqAttr} placeholder="Enter your answer...">
+          </div>
+        `;
+      } else if (q.type === 'textarea') {
+        html += `
+          <div class="form-group" style="margin-top: 0.5rem;">
+            <label for="${uniqueId}" class="form-label">${q.label} ${isReq}</label>
+            <textarea id="${uniqueId}" class="form-control" ${reqAttr} rows="3" placeholder="Type here..."></textarea>
+          </div>
+        `;
+      } else if (q.type === 'radio') {
+        const opts = (q.options || '').split(',').map(o => o.trim()).filter(Boolean);
+        let radiosHtml = opts.map(opt => `
+          <label class="custom-radio">
+            <input type="radio" name="${uniqueId}" value="${opt}" ${reqAttr}>
+            <span class="radio-indicator"></span>
+            <span class="radio-label">${opt}</span>
+          </label>
+        `).join('');
+        html += `
+          <div class="form-group" style="margin-top: 0.5rem;">
+            <label class="form-label" style="margin-bottom: 0.25rem;">${q.label} ${isReq}</label>
+            <div class="radio-group-vertical" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.25rem 1rem;">
+              ${radiosHtml}
+            </div>
+          </div>
+        `;
+      } else if (q.type === 'select') {
+        const opts = (q.options || '').split(',').map(o => o.trim()).filter(Boolean);
+        let optionsHtml = `<option value="" disabled selected>Select an option</option>`;
+        opts.forEach(opt => {
+          optionsHtml += `<option value="${opt}">${opt}</option>`;
+        });
+        html += `
+          <div class="form-group" style="margin-top: 0.5rem;">
+            <label for="${uniqueId}" class="form-label">${q.label} ${isReq}</label>
+            <select id="${uniqueId}" class="form-control custom-select" ${reqAttr}>
+              ${optionsHtml}
+            </select>
+          </div>
+        `;
+      } else if (q.type === 'toggle') {
+        html += `
+          <div class="form-group toggle-group" style="margin-top: 0.5rem; flex-direction: row; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-info-card); border-radius: 0.5rem; border: 1px solid var(--border-input);">
+            <label for="${uniqueId}" class="form-label" style="margin-bottom: 0;">${q.label}</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="${uniqueId}" ${reqAttr}>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        `;
+      }
+    });
+
+    dynamicQuestionsContainer.innerHTML = html;
+  }
+
   if (detailsRegisterBtn) {
     detailsRegisterBtn.addEventListener('click', () => {
       if (session) {
-        // Logged In: Proceed directly
-        if (registrationSummaryModal) {
-          updateCalculations();
-          registrationSummaryModal.classList.remove('hidden');
+        // Logged In: Proceed to Registration Questions first
+        if (registrationQuestionsModal) {
+          renderDynamicQuestions();
+          registrationQuestionsModal.classList.remove('hidden');
         }
       } else {
         // Logged Out: Redirect directly to login page with redirect back to index
@@ -409,10 +503,10 @@ document.addEventListener('DOMContentLoaded', () => {
         checkoutLoginModal.classList.add('hidden');
         checkoutLoginForm.reset();
 
-        // Proceed directly to the registration summary modal
-        if (registrationSummaryModal) {
-          updateCalculations();
-          registrationSummaryModal.classList.remove('hidden');
+        // Proceed to the registration questions modal
+        if (registrationQuestionsModal) {
+          renderDynamicQuestions();
+          registrationQuestionsModal.classList.remove('hidden');
         }
       } catch (error) {
         console.warn("Firebase sign in failed, trying local storage fallback:", error);
@@ -432,10 +526,10 @@ document.addEventListener('DOMContentLoaded', () => {
           checkoutLoginModal.classList.add('hidden');
           checkoutLoginForm.reset();
 
-          // Proceed directly to the registration summary modal
-          if (registrationSummaryModal) {
-            updateCalculations();
-            registrationSummaryModal.classList.remove('hidden');
+          // Proceed to the registration questions modal
+          if (registrationQuestionsModal) {
+            renderDynamicQuestions();
+            registrationQuestionsModal.classList.remove('hidden');
           }
         } else {
           if (checkoutLoginError) {
@@ -471,10 +565,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (checkoutLoginModal) checkoutLoginModal.classList.add('hidden');
         if (checkoutLoginForm) checkoutLoginForm.reset();
 
-        // Proceed directly to the registration summary modal
-        if (registrationSummaryModal) {
-          updateCalculations();
-          registrationSummaryModal.classList.remove('hidden');
+        // Proceed to the registration questions modal
+        if (registrationQuestionsModal) {
+          renderDynamicQuestions();
+          registrationQuestionsModal.classList.remove('hidden');
         }
       } catch (error) {
         if (error.code !== 'auth/popup-closed-by-user') {
@@ -499,19 +593,78 @@ document.addEventListener('DOMContentLoaded', () => {
     registerSubmitBtn.addEventListener('click', () => {
       if (quantity <= 0) return;
 
-      if (registrationSummaryModal) {
-        registrationSummaryModal.classList.add('hidden');
-      }
-
       if (session) {
         if (session.role === 'admin') {
           alert("Event administrators cannot book passes. Please register or log in as a General User to proceed.");
           return;
         }
+        
+        // Hide summary and complete booking
+        if (registrationSummaryModal) {
+          registrationSummaryModal.classList.add('hidden');
+        }
+        
         const ticketIds = bookTicketsForUser(session.email, quantity, 'offline', false);
         showRegistrationSuccess(session.email, ticketIds);
       } else {
         window.location.href = `login.html?qty=${quantity}&payment=offline`;
+      }
+    });
+  }
+
+  // Handle Questions Modal Close
+  if (closeQuestionsModalBtn && registrationQuestionsModal) {
+    closeQuestionsModalBtn.addEventListener('click', () => {
+      registrationQuestionsModal.classList.add('hidden');
+    });
+  }
+
+  // Handle Questions Modal Back button
+  if (backToSummaryBtn && registrationQuestionsModal) {
+    backToSummaryBtn.addEventListener('click', () => {
+      registrationQuestionsModal.classList.add('hidden');
+    });
+  }
+
+  // Handle Questions Form Submit
+  if (registrationQuestionsForm) {
+    registrationQuestionsForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      // Capture answers from form inputs
+      const answers = {};
+      let config = JSON.parse(localStorage.getItem('customRegistrationForm'));
+      if (!config || config.length === 0) {
+        config = defaultFormConfig;
+      }
+      
+      config.forEach((q, idx) => {
+        const uniqueId = q.id || `q-custom-${idx}`;
+        if (q.type === 'text' || q.type === 'textarea' || q.type === 'select') {
+          const input = document.getElementById(uniqueId);
+          if (input) {
+            answers[q.label] = input.value.trim();
+          }
+        } else if (q.type === 'radio') {
+          const checkedRadio = document.querySelector(`input[name="${uniqueId}"]:checked`);
+          answers[q.label] = checkedRadio ? checkedRadio.value : '';
+        } else if (q.type === 'toggle') {
+          const checkbox = document.getElementById(uniqueId);
+          answers[q.label] = checkbox ? (checkbox.checked ? 'Yes' : 'No') : 'No';
+        }
+      });
+      
+      sessionStorage.setItem('currentBookingAnswers', JSON.stringify(answers));
+      
+      // Hide questions modal
+      if (registrationQuestionsModal) {
+        registrationQuestionsModal.classList.add('hidden');
+      }
+
+      // Show summary modal
+      if (registrationSummaryModal) {
+        updateCalculations();
+        registrationSummaryModal.classList.remove('hidden');
       }
     });
   }
@@ -635,6 +788,18 @@ document.addEventListener('DOMContentLoaded', () => {
     ticketsRemaining = Math.max(0, ticketsRemaining - qty);
     localStorage.setItem('ticketsRemaining', ticketsRemaining);
     updateTicketsRemainingDisplay();
+
+    // Retrieve and parse temporary answers
+    let answers = {};
+    try {
+      const storedAnswers = sessionStorage.getItem('currentBookingAnswers');
+      if (storedAnswers) {
+        answers = JSON.parse(storedAnswers);
+      }
+    } catch (err) {
+      console.error("Error parsing booking answers:", err);
+    }
+
     const newTicketIds = [];
     for (let i = 1; i <= qty; i++) {
       const ticketIdStr = `PRNT-EBC28-${orderNum}-${i}`;
@@ -645,11 +810,16 @@ document.addEventListener('DOMContentLoaded', () => {
         status: 'unused',
         payment: paymentType,
         approval: 'pending',
-        timestamp: new Date().toLocaleString()
+        timestamp: new Date().toLocaleString(),
+        answers: answers
       });
       newTicketIds.push(ticketIdStr);
     }
     localStorage.setItem('tickets', JSON.stringify(tickets));
+    
+    // Clear temporary answers
+    sessionStorage.removeItem('currentBookingAnswers');
+
     localStorage.setItem('lastGeneratedTickets', JSON.stringify(newTicketIds));
     localStorage.setItem('justBookedQty', qty);
     localStorage.setItem('justBookedEmail', email);

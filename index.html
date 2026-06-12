@@ -22,7 +22,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Styling -->
-  <link rel="stylesheet" href="styles.css?v=5">
+  <link rel="stylesheet" href="styles.css?v=17">
 </head>
 <body>
   
@@ -404,6 +404,31 @@
     </div>
   </div>
 
+  <!-- Registration Questions Modal -->
+  <div class="modal-overlay hidden" id="registration-questions-modal">
+    <div class="modal-card" style="max-width: 550px;">
+      <div class="modal-header">
+        <h3 class="modal-title" style="font-family: 'Outfit', sans-serif;">Attendee Details</h3>
+        <button class="modal-close-btn" id="btn-close-questions-modal" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem; max-height: 80vh; overflow-y: auto;">
+        <p class="modal-desc" style="margin-bottom: 1.25rem;">Please answer a few questions from the organizer before completing your registration.</p>
+        
+        <form class="modal-form" id="registration-questions-form">
+          <div id="dynamic-questions-container">
+            <!-- Questions will be dynamically injected here by app.js -->
+          </div>
+          
+          <!-- Actions -->
+          <div style="margin-top: 0.2rem; display: flex; gap: 0.75rem;">
+            <button type="button" class="btn btn-secondary btn-block btn-lg" id="btn-back-to-summary" style="flex: 1; padding: 0.7rem 1.25rem; font-size: 0.95rem;">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-block btn-lg" id="btn-submit-questions" style="flex: 2; padding: 0.7rem 1.25rem; font-size: 0.95rem;">Continue to Checkout</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- User Digital Ticket Modal / Success Screen -->
   <div class="modal-overlay hidden" id="digital-ticket-modal">
     <div class="modal-card ticket-overlay-card">
@@ -705,6 +730,6 @@
   </div>
 
   <!-- Scripts -->
-  <script type="module" src="app.js?v=5"></script>
+  <script type="module" src="app.js?v=12"></script>
 </body>
 </html>
