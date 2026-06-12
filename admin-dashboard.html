@@ -182,54 +182,59 @@
     <!-- Grid: Scanner vs. Log Search -->
     <div class="admin-grid-layout">
       
-      <!-- Left: Simulator Scanner Viewport -->
-      <div class="admin-panel-box">
-        <h3 class="admin-panel-title">QR Scanner Simulator</h3>
+      <!-- Left Column: Scanner & Announcements -->
+      <div style="display: flex; flex-direction: column; gap: 2rem;">
         
-        <div class="scanner-viewfinder">
-          <div class="scanner-laser-line"></div>
-          <div class="scanner-corners">
-            <span class="corner top-left"></span>
-            <span class="corner top-right"></span>
-            <span class="corner bottom-left"></span>
-            <span class="corner bottom-right"></span>
+        <!-- Left: Simulator Scanner Viewport -->
+        <div class="admin-panel-box">
+          <h3 class="admin-panel-title">QR Scanner Simulator</h3>
+          
+          <div class="scanner-viewfinder">
+            <div class="scanner-laser-line"></div>
+            <div class="scanner-corners">
+              <span class="corner top-left"></span>
+              <span class="corner top-right"></span>
+              <span class="corner bottom-left"></span>
+              <span class="corner bottom-right"></span>
+            </div>
+            <div class="scanner-placeholder-content">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 2.5rem; height: 2.5rem; opacity: 0.25; color: var(--text-main); margin-bottom: 0.5rem;">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                <circle cx="12" cy="13" r="4"></circle>
+              </svg>
+              <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted);">Viewfinder Simulator Active</span>
+            </div>
           </div>
-          <div class="scanner-placeholder-content">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 2.5rem; height: 2.5rem; opacity: 0.25; color: var(--text-main); margin-bottom: 0.5rem;">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-              <circle cx="12" cy="13" r="4"></circle>
-            </svg>
-            <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted);">Viewfinder Simulator Active</span>
+
+          <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-admin-simulate-scan">
+            Simulate QR Scan
+          </button>
+
+          <div class="admin-manual-checkin">
+            <span class="admin-label-small">MANUAL TICKET CHECK-IN</span>
+            <div class="manual-checkin-row">
+              <input type="text" id="manual-ticket-id-input" class="promo-textbox" placeholder="Enter Ticket ID (e.g. PRNT-EBC28-...)" aria-label="Manual Ticket check-in input">
+              <button type="button" class="btn btn-primary btn-sm" id="btn-admin-manual-checkin">Verify</button>
+            </div>
           </div>
         </div>
 
-        <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-admin-simulate-scan">
-          Simulate QR Scan
-        </button>
-
-        <div class="admin-manual-checkin">
-          <span class="admin-label-small">MANUAL TICKET CHECK-IN</span>
-          <div class="manual-checkin-row">
-            <input type="text" id="manual-ticket-id-input" class="promo-textbox" placeholder="Enter Ticket ID (e.g. PRNT-EBC28-...)" aria-label="Manual Ticket check-in input">
-            <button type="button" class="btn btn-primary btn-sm" id="btn-admin-manual-checkin">Verify</button>
+        <!-- Left: Announcements Box -->
+        <div class="admin-panel-box">
+          <h3 class="admin-panel-title">Send Announcement</h3>
+          <p class="panel-section-subtitle" style="margin-bottom: 0.75rem;">Post an announcement that will be displayed live on the Attendee Tickets Hub.</p>
+          <div class="form-group" style="margin-bottom: 0.75rem;">
+            <textarea id="announcement-textarea" class="form-control" placeholder="Write announcement here... (e.g. Meetup starts in 10 mins!)" style="width: 100%; min-height: 80px; font-family: inherit; font-size: 0.85rem; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border-input); resize: vertical;"></textarea>
           </div>
+          <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-send-announcement">
+            Broadcast Announcement
+          </button>
         </div>
-      </div>
 
-      <!-- Left: Announcements Box -->
-      <div class="admin-panel-box">
-        <h3 class="admin-panel-title">Send Announcement</h3>
-        <p class="panel-section-subtitle" style="margin-bottom: 0.75rem;">Post an announcement that will be displayed live on the Attendee Tickets Hub.</p>
-        <div class="form-group" style="margin-bottom: 0.75rem;">
-          <textarea id="announcement-textarea" class="form-control" placeholder="Write announcement here... (e.g. Meetup starts in 10 mins!)" style="width: 100%; min-height: 80px; font-family: inherit; font-size: 0.85rem; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border-input); resize: vertical;"></textarea>
-        </div>
-        <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-send-announcement">
-          Broadcast Announcement
-        </button>
       </div>
 
       <!-- Right: Searchable Registrations Table -->
-      <div class="admin-panel-box" style="grid-column: span 1;">
+      <div class="admin-panel-box">
         <h3 class="admin-panel-title">RSVP & Registration Search</h3>
         
         <div class="search-filter-row" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
