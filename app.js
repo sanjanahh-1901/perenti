@@ -1,3 +1,18 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB7FBluJ3ybc1FyB-3kzh5Gnf68aSR5sUM",
+  authDomain: "perenti-app.firebaseapp.com",
+  projectId: "perenti-app",
+  storageBucket: "perenti-app.firebasestorage.app",
+  messagingSenderId: "136634053807",
+  appId: "1:136634053807:web:f31bb498a6feefa28d105a"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const firebaseAuth = getAuth(firebaseApp);
+
 document.addEventListener('DOMContentLoaded', () => {
 
   // ==========================================================================
@@ -313,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeCheckoutModalBtn = document.getElementById('btn-close-checkout-modal');
   const checkoutLoginForm = document.getElementById('checkout-login-form');
   const checkoutLoginError = document.getElementById('checkout-login-error');
-  const checkoutMicrosoftBtn = document.querySelector('#checkout-login-modal #btn-microsoft-login');
+  const checkoutGoogleBtn = document.querySelector('#checkout-login-modal #btn-google-login');
 
   if (detailsRegisterBtn) {
     detailsRegisterBtn.addEventListener('click', () => {
@@ -364,9 +379,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Handle Checkout Login Form submit inline
+  // Handle Checkout Login Form submit inline using Firebase Auth
   if (checkoutLoginForm) {
-    checkoutLoginForm.addEventListener('submit', (e) => {
+    checkoutLoginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (checkoutLoginError) checkoutLoginError.classList.add('hidden');
 
@@ -374,20 +389,19 @@ document.addEventListener('DOMContentLoaded', () => {
       const passwordInput = document.querySelector('#checkout-login-modal #login-password');
       if (!emailInput || !passwordInput) return;
 
-      const email = emailInput.value.trim().toLowerCase();
+      const email = emailInput.value.trim();
       const password = passwordInput.value;
 
-      let users = [];
       try {
-        users = JSON.parse(localStorage.getItem('users')) || [];
-      } catch (e) {
-        console.error("Error parsing users:", e);
-      }
-      const user = users.find(u => u.email === email && u.password === password);
+        const userCredential = await signInWithEmailAndPassword(firebaseAuth, email, password);
+        const user = userCredential.user;
 
-      if (user) {
+        // Fetch role
+        const roles = JSON.parse(localStorage.getItem('userRoles')) || {};
+        const role = roles[user.email] || (user.email === 'admin@perenti.com' ? 'admin' : 'user');
+
         // Store session
-        session = { email: user.email, role: user.role };
+        session = { email: user.email, role: role };
         localStorage.setItem('currentUser', JSON.stringify(session));
 
         // Update session UI globally on the page
@@ -402,43 +416,77 @@ document.addEventListener('DOMContentLoaded', () => {
           updateCalculations();
           registrationSummaryModal.classList.remove('hidden');
         }
-      } else {
-        if (checkoutLoginError) checkoutLoginError.classList.remove('hidden');
+      } catch (error) {
+        console.warn("Firebase sign in failed, trying local storage fallback:", error);
+        
+        const localUsers = JSON.parse(localStorage.getItem('users')) || [];
+        const matchedUser = localUsers.find(u => u.email === email && u.password === password);
+        
+        if (matchedUser) {
+          // Store session
+          session = { email: matchedUser.email, role: matchedUser.role };
+          localStorage.setItem('currentUser', JSON.stringify(session));
+
+          // Update session UI globally on the page
+          updateHeaderSessionUI();
+
+          // Close login modal
+          checkoutLoginModal.classList.add('hidden');
+          checkoutLoginForm.reset();
+
+          // Proceed directly to the registration summary modal
+          if (registrationSummaryModal) {
+            updateCalculations();
+            registrationSummaryModal.classList.remove('hidden');
+          }
+        } else {
+          if (checkoutLoginError) {
+            const errorMsgSpan = document.getElementById('checkout-login-error-text');
+            if (errorMsgSpan) errorMsgSpan.textContent = error.message;
+            checkoutLoginError.classList.remove('hidden');
+          }
+        }
       }
     });
   }
 
-  // Handle Microsoft SSO button in Checkout Login Modal inline
-  if (checkoutMicrosoftBtn) {
-    checkoutMicrosoftBtn.addEventListener('click', () => {
-      const microsoftUser = { email: 'entra.builder@microsoft.com', role: 'user' };
-      
-      // Save to users list if new
-      let users = [];
+  // Handle Google SSO button in Checkout Login Modal inline
+  if (checkoutGoogleBtn) {
+    checkoutGoogleBtn.addEventListener('click', async () => {
+      if (checkoutLoginError) checkoutLoginError.classList.add('hidden');
+      const provider = new GoogleAuthProvider();
       try {
-        users = JSON.parse(localStorage.getItem('users')) || [];
-      } catch (e) {
-        console.error("Error parsing users:", e);
-      }
-      if (!users.some(u => u.email === microsoftUser.email)) {
-        users.push({ email: microsoftUser.email, password: 'password', role: 'user' });
-        localStorage.setItem('users', JSON.stringify(users));
-      }
+        const result = await signInWithPopup(firebaseAuth, provider);
+        const user = result.user;
 
-      session = microsoftUser;
-      localStorage.setItem('currentUser', JSON.stringify(session));
+        // Fetch role
+        const roles = JSON.parse(localStorage.getItem('userRoles')) || {};
+        const role = roles[user.email] || (user.email === 'admin@perenti.com' ? 'admin' : 'user');
 
-      // Update session UI globally
-      updateHeaderSessionUI();
+        session = { email: user.email, role: role };
+        localStorage.setItem('currentUser', JSON.stringify(session));
 
-      // Close login modal
-      if (checkoutLoginModal) checkoutLoginModal.classList.add('hidden');
-      if (checkoutLoginForm) checkoutLoginForm.reset();
+        // Update session UI globally
+        updateHeaderSessionUI();
 
-      // Proceed directly to the registration summary modal
-      if (registrationSummaryModal) {
-        updateCalculations();
-        registrationSummaryModal.classList.remove('hidden');
+        // Close login modal
+        if (checkoutLoginModal) checkoutLoginModal.classList.add('hidden');
+        if (checkoutLoginForm) checkoutLoginForm.reset();
+
+        // Proceed directly to the registration summary modal
+        if (registrationSummaryModal) {
+          updateCalculations();
+          registrationSummaryModal.classList.remove('hidden');
+        }
+      } catch (error) {
+        if (error.code !== 'auth/popup-closed-by-user') {
+          console.error("Error signing in inline with Google:", error);
+          if (checkoutLoginError) {
+            const errorMsgSpan = document.getElementById('checkout-login-error-text');
+            if (errorMsgSpan) errorMsgSpan.textContent = error.message;
+            checkoutLoginError.classList.remove('hidden');
+          }
+        }
       }
     });
   }
