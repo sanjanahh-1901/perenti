@@ -137,7 +137,6 @@
         <p>Manage RSVPs, scan attendee QR codes, and review registration logs.</p>
       </div>
     </div>
-
     <!-- Top Metrics stats -->
     <div class="admin-stats-row" style="margin-bottom: 0.5rem;">
       <div class="admin-stat-box">
@@ -152,8 +151,16 @@
         <span class="stat-num" id="admin-stat-pending">0</span>
         <span class="stat-label">Pending Check-in</span>
       </div>
+      <div class="admin-stat-box">
+        <span class="stat-num" id="admin-stat-revenue">₹0.00</span>
+        <span class="stat-label">Revenue</span>
+      </div>
+      <div class="admin-stat-box">
+        <span class="stat-num" id="admin-stat-attendance-rate">0%</span>
+        <span class="stat-label">Attendance Rate</span>
+      </div>
     </div>
-
+    
     <!-- Live check-in success/error banners -->
     <div class="admin-scan-result-banner hidden" id="admin-scan-success-banner">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="banner-success-svg">
@@ -209,21 +216,51 @@
         </div>
       </div>
 
-      <!-- Right: Searchable Registrations Table -->
+      <!-- Left: Announcements Box -->
       <div class="admin-panel-box">
+        <h3 class="admin-panel-title">Send Announcement</h3>
+        <p class="panel-section-subtitle" style="margin-bottom: 0.75rem;">Post an announcement that will be displayed live on the Attendee Tickets Hub.</p>
+        <div class="form-group" style="margin-bottom: 0.75rem;">
+          <textarea id="announcement-textarea" class="form-control" placeholder="Write announcement here... (e.g. Meetup starts in 10 mins!)" style="width: 100%; min-height: 80px; font-family: inherit; font-size: 0.85rem; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border-input); resize: vertical;"></textarea>
+        </div>
+        <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-send-announcement">
+          Broadcast Announcement
+        </button>
+      </div>
+
+      <!-- Right: Searchable Registrations Table -->
+      <div class="admin-panel-box" style="grid-column: span 1;">
         <h3 class="admin-panel-title">RSVP & Registration Search</h3>
         
-        <div class="search-filter-row">
-          <input type="text" id="attendee-search-input" class="form-control" placeholder="Search by email or Ticket ID..." style="flex: 1;">
+        <div class="search-filter-row" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <input type="text" id="attendee-search-input" class="form-control" placeholder="Search by email or Ticket ID..." style="flex: 1; min-width: 180px;">
+          
+          <select id="filter-status-select" class="form-control" style="width: 130px; cursor: pointer; padding: 0.25rem 0.5rem;">
+            <option value="all">All Statuses</option>
+            <option value="unused">Unused</option>
+            <option value="checked-in">Checked In</option>
+          </select>
+          
+          <select id="filter-approval-select" class="form-control" style="width: 140px; cursor: pointer; padding: 0.25rem 0.5rem;">
+            <option value="all">All Approvals</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-export-csv" style="padding: 0.5rem 0.75rem; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem; border-radius: 0.375rem; cursor: pointer; background-color: var(--bg-info-card); border: 1px solid var(--border-card); color: var(--text-main);">
+            📥 Export CSV
+          </button>
         </div>
 
-        <div class="checked-in-list-container">
+        <div class="checked-in-list-container" style="height: auto; max-height: 480px; overflow-y: auto;">
           <table class="attendees-table">
             <thead>
               <tr>
                 <th>Email</th>
                 <th>Ticket ID</th>
                 <th>Status</th>
+                <th>Approval</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -260,6 +297,8 @@
       const adminStatTotal = document.getElementById('admin-stat-total');
       const adminStatChecked = document.getElementById('admin-stat-checked');
       const adminStatPending = document.getElementById('admin-stat-pending');
+      const adminStatRevenue = document.getElementById('admin-stat-revenue');
+      const adminStatAttendanceRate = document.getElementById('admin-stat-attendance-rate');
 
       const adminSuccessBanner = document.getElementById('admin-scan-success-banner');
       const adminSuccessText = document.getElementById('admin-scan-success-text');
@@ -283,22 +322,39 @@
         const checked = tickets.filter(t => t.status === 'checked-in').length;
         const pending = total - checked;
 
+        // Calculate Revenue and Attendance Rate
+        const ticketPrice = 399; // Ticket price is ₹399
+        const revenue = total * ticketPrice;
+        const attendanceRate = total > 0 ? ((checked / total) * 100).toFixed(1) : '0';
+
         adminStatTotal.textContent = total;
         adminStatChecked.textContent = checked;
         adminStatPending.textContent = pending;
+        if (adminStatRevenue) adminStatRevenue.textContent = `₹${revenue.toFixed(2)}`;
+        if (adminStatAttendanceRate) adminStatAttendanceRate.textContent = `${attendanceRate}%`;
 
-        // Render attendees table matching search filter
+        // Render attendees table matching search filter and other filters
         attendeesListBody.innerHTML = '';
+
+        const statusFilter = document.getElementById('filter-status-select').value;
+        const approvalFilter = document.getElementById('filter-approval-select').value;
 
         const filteredTickets = tickets.filter(t => {
           const query = searchFilter.toLowerCase();
-          return t.email.toLowerCase().includes(query) || t.id.toLowerCase().includes(query);
+          const matchesSearch = t.email.toLowerCase().includes(query) || t.id.toLowerCase().includes(query);
+          
+          const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
+          
+          const approval = t.approval || 'approved';
+          const matchesApproval = approvalFilter === 'all' || approval === approvalFilter;
+          
+          return matchesSearch && matchesStatus && matchesApproval;
         });
 
         if (filteredTickets.length === 0) {
           attendeesListBody.innerHTML = `
             <tr class="empty-list-row">
-              <td colspan="4" style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 2rem 0;">No registrations match your search.</td>
+              <td colspan="5" style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 2rem 0;">No registrations match your filters.</td>
             </tr>
           `;
           return;
@@ -307,29 +363,92 @@
         filteredTickets.forEach(t => {
           const row = document.createElement('tr');
           const isChecked = t.status === 'checked-in';
+          const approval = t.approval || 'approved';
+          
           const statusBadge = `<span class="badge-status ${isChecked ? 'checked-in' : 'unused'}">${isChecked ? 'Checked In' : 'Unused'}</span>`;
+          
+          let approvalBadgeClass = 'unused';
+          if (approval === 'approved') approvalBadgeClass = 'checked-in';
+          
+          const approvalBadgeStyle = approval === 'rejected' 
+            ? 'background-color: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.2);' 
+            : '';
+            
+          const approvalBadge = `<span class="badge-status ${approvalBadgeClass}" style="${approvalBadgeStyle}">${approval.toUpperCase()}</span>`;
           
           let actionCell = '';
           if (isChecked) {
             actionCell = `<span style="color: var(--text-muted); font-size: 0.75rem;">Checked-in ${t.timestamp.split(',')[1] || t.timestamp}</span>`;
-          } else {
+          } else if (approval === 'approved') {
             actionCell = `<button type="button" class="btn-action-checkin" onclick="triggerManualCheckinFromTable('${t.id}')">Check In</button>`;
+          } else if (approval === 'pending') {
+            actionCell = `<span style="color: var(--text-muted); font-size: 0.75rem;">Pending Approval</span>`;
+          } else {
+            actionCell = `<span style="color: var(--text-muted); font-size: 0.75rem; text-decoration: line-through;">Rejected</span>`;
+          }
+          
+          // Add Approve/Reject action buttons
+          let approvalActions = '';
+          if (approval === 'pending') {
+            approvalActions = `
+              <div style="display: flex; gap: 0.25rem;">
+                <button type="button" class="btn-action-checkin" style="background-color: #10b981; font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="triggerApproveAttendee('${t.id}')">Approve</button>
+                <button type="button" class="btn-action-checkin" style="background-color: #ef4444; font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="triggerRejectAttendee('${t.id}')">Reject</button>
+              </div>
+            `;
+          } else if (approval === 'approved') {
+            approvalActions = `
+              <button type="button" class="btn-action-checkin" style="background-color: #ef4444; font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="triggerRejectAttendee('${t.id}')">Reject</button>
+            `;
+          } else {
+            approvalActions = `
+              <button type="button" class="btn-action-checkin" style="background-color: #10b981; font-size: 0.7rem; padding: 0.2rem 0.4rem;" onclick="triggerApproveAttendee('${t.id}')">Approve</button>
+            `;
           }
 
           row.innerHTML = `
-            <td style="font-weight: 500;">${t.email}</td>
+            <td style="font-weight: 500; font-size: 0.85rem;">${t.email}</td>
             <td><span class="monospaced-code" style="font-size:0.75rem;">${t.id}</span></td>
             <td>${statusBadge}</td>
-            <td>${actionCell}</td>
+            <td>${approvalBadge}</td>
+            <td>
+              <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                ${actionCell}
+                ${approvalActions}
+              </div>
+            </td>
           `;
           attendeesListBody.appendChild(row);
         });
       }
 
-      // Global function bound to window so onclick works
+      // Global functions bound to window so onclick works
       window.triggerManualCheckinFromTable = function(tId) {
         processCheckIn(tId);
       };
+
+      window.triggerApproveAttendee = function(tId) {
+        updateAttendeeApproval(tId, 'approved');
+      };
+
+      window.triggerRejectAttendee = function(tId) {
+        updateAttendeeApproval(tId, 'rejected');
+      };
+
+      function updateAttendeeApproval(tId, newStatus) {
+        const tickets = JSON.parse(localStorage.getItem('tickets')) || [];
+        const ticketIdx = tickets.findIndex(t => t.id === tId);
+        if (ticketIdx !== -1) {
+          tickets[ticketIdx].approval = newStatus;
+          // If rejected, make sure status is unused
+          if (newStatus === 'rejected') {
+            tickets[ticketIdx].status = 'unused';
+          }
+          localStorage.setItem('tickets', JSON.stringify(tickets));
+          showCheckinSuccess(`Attendee ${tickets[ticketIdx].email} has been ${newStatus}!`);
+          updateDashboard();
+        }
+      }
 
       function processCheckIn(tId) {
         adminSuccessBanner.classList.add('hidden');
@@ -352,6 +471,12 @@
         const ticket = tickets[ticketIdx];
         if (ticket.status === 'checked-in') {
           showCheckinError(`Warning: Ticket ${cleanId} is already checked in!`);
+          return;
+        }
+
+        const approval = ticket.approval || 'approved';
+        if (approval !== 'approved') {
+          showCheckinError(`Error: Cannot check-in ticket ${cleanId} because it is ${approval.toUpperCase()}!`);
           return;
         }
 
@@ -385,23 +510,25 @@
       simulateScanBtn.addEventListener('click', () => {
         const tickets = JSON.parse(localStorage.getItem('tickets')) || [];
         
-        // Find the first unused ticket in database to simulate check-in
-        let ticketToScan = tickets.find(t => t.status === 'unused');
+        // Find the first approved unused ticket in database to simulate check-in
+        let ticketToScan = tickets.find(t => t.status === 'unused' && (t.approval || 'approved') === 'approved');
         if (!ticketToScan && tickets.length > 0) {
-          // Fallback to first ticket in database to demo already checked-in message
+          // Fallback to first ticket to demo checked-in or error message
           ticketToScan = tickets[0];
         }
 
         if (!ticketToScan) {
-          showCheckinError("Error: No tickets exist in database to scan!");
+          showCheckinError("Error: No approved unused tickets exist in database to scan!");
           return;
         }
 
         // Laser scan visual feedback line animation
         const laser = document.querySelector('.scanner-laser-line');
-        laser.style.animation = 'none';
-        laser.offsetHeight; // trigger reflow
-        laser.style.animation = null;
+        if (laser) {
+          laser.style.animation = 'none';
+          laser.offsetHeight; // trigger reflow
+          laser.style.animation = null;
+        }
 
         setTimeout(() => {
           processCheckIn(ticketToScan.id);
@@ -415,11 +542,65 @@
         manualTicketInput.value = '';
       });
 
-      // Search typing input
+      // Search and Filter inputs
       attendeeSearchInput.addEventListener('input', (e) => {
         searchFilter = e.target.value;
         updateDashboard();
       });
+
+      document.getElementById('filter-status-select').addEventListener('change', updateDashboard);
+      document.getElementById('filter-approval-select').addEventListener('change', updateDashboard);
+
+      // Export CSV click listener
+      const exportCsvBtn = document.getElementById('btn-export-csv');
+      if (exportCsvBtn) {
+        exportCsvBtn.addEventListener('click', () => {
+          const tickets = JSON.parse(localStorage.getItem('tickets')) || [];
+          if (tickets.length === 0) {
+            showCheckinError("Error: No registrations available to export!");
+            return;
+          }
+
+          let csvContent = "data:text/csv;charset=utf-8,";
+          csvContent += "Email,Ticket ID,Ticket Status,Approval Status,Payment,Timestamp\n";
+
+          tickets.forEach(t => {
+            const email = t.email;
+            const id = t.id;
+            const status = t.status;
+            const approval = t.approval || 'approved';
+            const payment = t.payment || 'offline';
+            const timestamp = (t.timestamp || '').replace(/"/g, '""');
+
+            csvContent += `"${email}","${id}","${status}","${approval}","${payment}","${timestamp}"\n`;
+          });
+
+          const encodedUri = encodeURI(csvContent);
+          const link = document.createElement("a");
+          link.setAttribute("href", encodedUri);
+          link.setAttribute("download", "perenti_attendees.csv");
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          showCheckinSuccess("Attendee list CSV downloaded successfully!");
+        });
+      }
+
+      // Announcement send click listener
+      const sendAnnouncementBtn = document.getElementById('btn-send-announcement');
+      const announcementTextarea = document.getElementById('announcement-textarea');
+      if (sendAnnouncementBtn && announcementTextarea) {
+        sendAnnouncementBtn.addEventListener('click', () => {
+          const text = announcementTextarea.value.trim();
+          if (text.length === 0) {
+            showCheckinError("Error: Announcement text cannot be empty!");
+            return;
+          }
+          localStorage.setItem('latestAnnouncement', text);
+          announcementTextarea.value = '';
+          showCheckinSuccess("Announcement broadcasted successfully to all attendees!");
+        });
+      }
 
       // Logout trigger
       document.getElementById('btn-admin-logout').addEventListener('click', () => {

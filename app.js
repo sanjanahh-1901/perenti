@@ -644,6 +644,7 @@ document.addEventListener('DOMContentLoaded', () => {
         qty: 1,
         status: 'unused',
         payment: paymentType,
+        approval: 'pending',
         timestamp: new Date().toLocaleString()
       });
       newTicketIds.push(ticketIdStr);

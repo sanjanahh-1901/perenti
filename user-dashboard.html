@@ -165,6 +165,15 @@
       </div>
     </div>
 
+    <!-- Announcements Banner -->
+    <div class="announcements-alert hidden" id="announcements-alert" style="background-color: rgba(90, 154, 142, 0.1); border: 1px solid var(--brand-primary); border-radius: 0.75rem; padding: 1.25rem; margin-bottom: 2rem; display: flex; align-items: flex-start; gap: 0.75rem; box-shadow: var(--shadow-sm);">
+      <span style="font-size: 1.25rem; line-height: 1;">📢</span>
+      <div style="flex: 1;">
+        <h4 style="color: var(--brand-primary); font-size: 0.95rem; font-weight: 700; margin: 0 0 0.2rem 0;">Organizer Announcement</h4>
+        <p id="announcement-text" style="color: var(--text-main); font-size: 0.85rem; margin: 0; line-height: 1.4; font-weight: 550;"></p>
+      </div>
+    </div>
+
     <div class="hub-header-row">
       <div class="hub-title-section">
         <h1>My Tickets Hub</h1>
@@ -213,6 +222,22 @@
 
       // Populate header email
       document.getElementById('header-user-email').textContent = session.email;
+
+      // Check for announcements live
+      function checkAnnouncements() {
+        const latestAnnouncement = localStorage.getItem('latestAnnouncement');
+        const alertBox = document.getElementById('announcements-alert');
+        const textElement = document.getElementById('announcement-text');
+        if (latestAnnouncement && alertBox && textElement) {
+          textElement.textContent = latestAnnouncement;
+          alertBox.classList.remove('hidden');
+        } else if (alertBox) {
+          alertBox.classList.add('hidden');
+        }
+      }
+      checkAnnouncements();
+      // Poll announcements every 2 seconds
+      setInterval(checkAnnouncements, 2000);
 
       const ticketsContainer = document.getElementById('hub-tickets-container');
       const emptyState = document.getElementById('hub-empty-state');
