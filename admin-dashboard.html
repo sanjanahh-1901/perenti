@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=17">
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     .dashboard-page-wrapper {
       min-height: 100vh;
@@ -191,30 +192,12 @@
       <!-- Left Column: Scanner & Announcements -->
       <div id="admin-left-col" style="display: flex; flex-direction: column; gap: 2rem;">
         
-        <!-- Left: Simulator Scanner Viewport -->
+        <!-- Left: Real Scanner Viewport -->
         <div class="admin-panel-box">
-          <h3 class="admin-panel-title">QR Scanner Simulator</h3>
+          <h3 class="admin-panel-title">QR Scanner</h3>
           
-          <div class="scanner-viewfinder">
-            <div class="scanner-laser-line"></div>
-            <div class="scanner-corners">
-              <span class="corner top-left"></span>
-              <span class="corner top-right"></span>
-              <span class="corner bottom-left"></span>
-              <span class="corner bottom-right"></span>
-            </div>
-            <div class="scanner-placeholder-content">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 2.5rem; height: 2.5rem; opacity: 0.25; color: var(--text-main); margin-bottom: 0.5rem;">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                <circle cx="12" cy="13" r="4"></circle>
-              </svg>
-              <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted);">Viewfinder Simulator Active</span>
-            </div>
-          </div>
-
-          <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-admin-simulate-scan">
-            Simulate QR Scan
-          </button>
+          <div id="qr-reader" style="width: 100%; border-radius: 0.5rem; overflow: hidden; margin-bottom: 1rem;"></div>
+          <div id="qr-reader-results" style="display: none;"></div>
 
           <div class="admin-manual-checkin">
             <span class="admin-label-small">MANUAL TICKET CHECK-IN</span>
@@ -373,7 +356,6 @@
       const adminErrorBanner = document.getElementById('admin-scan-error-banner');
       const adminErrorText = document.getElementById('admin-scan-error-text');
 
-      const simulateScanBtn = document.getElementById('btn-admin-simulate-scan');
       const manualCheckinBtn = document.getElementById('btn-admin-manual-checkin');
       const manualTicketInput = document.getElementById('manual-ticket-id-input');
       const attendeeSearchInput = document.getElementById('attendee-search-input');
@@ -565,34 +547,31 @@
         }, 5000);
       }
 
-      // Scanner simulator click handler
-      simulateScanBtn.addEventListener('click', () => {
-        const tickets = JSON.parse(localStorage.getItem('tickets')) || [];
-        
-        // Find the first approved unused ticket in database to simulate check-in
-        let ticketToScan = tickets.find(t => t.status === 'unused' && (t.approval || 'approved') === 'approved');
-        if (!ticketToScan && tickets.length > 0) {
-          // Fallback to first ticket to demo checked-in or error message
-          ticketToScan = tickets[0];
+      // Initialize Html5QrcodeScanner
+      let html5QrcodeScanner;
+      let lastScannedId = null;
+      let lastScanTime = 0;
+      try {
+        function onScanSuccess(decodedText, decodedResult) {
+          const now = Date.now();
+          // Debounce: prevent duplicate scans within 3 seconds
+          if (decodedText !== lastScannedId || (now - lastScanTime) > 3000) {
+            lastScannedId = decodedText;
+            lastScanTime = now;
+            processCheckIn(decodedText);
+          }
         }
 
-        if (!ticketToScan) {
-          showCheckinError("Error: No approved unused tickets exist in database to scan!");
-          return;
+        function onScanFailure(error) {
+          // handle scan failure, usually better to ignore and keep scanning
         }
 
-        // Laser scan visual feedback line animation
-        const laser = document.querySelector('.scanner-laser-line');
-        if (laser) {
-          laser.style.animation = 'none';
-          laser.offsetHeight; // trigger reflow
-          laser.style.animation = null;
-        }
-
-        setTimeout(() => {
-          processCheckIn(ticketToScan.id);
-        }, 500);
-      });
+        html5QrcodeScanner = new Html5QrcodeScanner(
+          "qr-reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
+        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+      } catch (e) {
+        console.error("QR Scanner initialization failed", e);
+      }
 
       // Manual ticket submit
       manualCheckinBtn.addEventListener('click', () => {
