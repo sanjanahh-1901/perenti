@@ -251,12 +251,55 @@
       <!-- Left Column: Scanner & Announcements -->
       <div id="admin-left-col" style="display: flex; flex-direction: column; gap: 2rem;">
         
-        <!-- Left: Real Scanner Viewport -->
+        <!-- Left: Premium Scanner Viewport -->
         <div class="admin-panel-box">
           <h3 class="admin-panel-title">QR Scanner</h3>
           
-          <div id="qr-reader" style="width: 100%; border-radius: 0.5rem; overflow: hidden; margin-bottom: 1rem;"></div>
-          <div id="qr-reader-results" style="display: none;"></div>
+          <div class="scanner-viewfinder" style="width: 100%; aspect-ratio: 4 / 3; position: relative; border-radius: 0.5rem; overflow: hidden; background: #000; margin-bottom: 1rem;">
+            <!-- Real QR reader video layer -->
+            <div id="qr-reader" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;"></div>
+            <div id="qr-reader-temp" style="display: none;"></div>
+            
+            <!-- Laser overlay -->
+            <div class="scanner-laser-line hidden" id="scanner-laser" style="z-index: 3;"></div>
+            
+            <!-- Target boundary corners -->
+            <div class="scanner-corners" style="z-index: 2;">
+              <span class="corner top-left"></span>
+              <span class="corner top-right"></span>
+              <span class="corner bottom-left"></span>
+              <span class="corner bottom-right"></span>
+            </div>
+            
+            <!-- Inactive Placeholder overlay -->
+            <div class="scanner-placeholder-content" id="scanner-placeholder" style="z-index: 2; position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.75);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 2.5rem; height: 2.5rem; opacity: 0.5; color: #fff; margin-bottom: 0.5rem;">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                <circle cx="12" cy="13" r="4"></circle>
+              </svg>
+              <span style="font-size: 0.8rem; font-weight: 500; color: #94a3b8;">Camera Scanner Inactive</span>
+            </div>
+          </div>
+          
+          <!-- Scanner control actions -->
+          <div class="scanner-actions" style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem;">
+            <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-start-camera-scan">
+              📷 Start Camera Scanner
+            </button>
+            <button type="button" class="btn btn-block btn-lg hidden" id="btn-stop-camera-scan" style="background-color: #ef4444; color: white; border: none;">
+              🛑 Stop Camera Scanner
+            </button>
+            
+            <div style="display: flex; gap: 0.5rem;">
+              <button type="button" class="btn btn-outline btn-sm" id="btn-trigger-file-scan" style="flex: 1; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
+                🖼️ Scan Image File
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-simulate-qr-scan" style="flex: 1; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
+                🧪 Simulate Scan
+              </button>
+            </div>
+            <input type="file" id="qr-file-input" accept="image/*" style="display: none;">
+          </div>
 
           <div class="admin-manual-checkin">
             <span class="admin-label-small">MANUAL TICKET CHECK-IN</span>
@@ -771,30 +814,144 @@
         }, 5000);
       }
 
-      // Initialize Html5QrcodeScanner
-      let html5QrcodeScanner;
+      // Initialize Html5Qrcode
+      let html5QrCode;
+      let isScanning = false;
       let lastScannedId = null;
       let lastScanTime = 0;
+
+      const qrReaderContainer = document.getElementById('qr-reader');
+      const startScanBtn = document.getElementById('btn-start-camera-scan');
+      const stopScanBtn = document.getElementById('btn-stop-camera-scan');
+      const triggerFileScanBtn = document.getElementById('btn-trigger-file-scan');
+      const simulateScanBtn = document.getElementById('btn-simulate-qr-scan');
+      const fileInput = document.getElementById('qr-file-input');
+      const scanPlaceholder = document.getElementById('scanner-placeholder');
+      const laserLine = document.getElementById('scanner-laser');
+
       try {
-        function onScanSuccess(decodedText, decodedResult) {
-          const now = Date.now();
-          // Debounce: prevent duplicate scans within 3 seconds
-          if (decodedText !== lastScannedId || (now - lastScanTime) > 3000) {
-            lastScannedId = decodedText;
-            lastScanTime = now;
-            processCheckIn(decodedText);
-          }
-        }
-
-        function onScanFailure(error) {
-          // handle scan failure, usually better to ignore and keep scanning
-        }
-
-        html5QrcodeScanner = new Html5QrcodeScanner(
-          "qr-reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
-        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        html5QrCode = new Html5Qrcode("qr-reader");
       } catch (e) {
         console.error("QR Scanner initialization failed", e);
+      }
+
+      function onScanSuccess(decodedText, decodedResult) {
+        const now = Date.now();
+        // Debounce: prevent duplicate scans within 3 seconds
+        if (decodedText !== lastScannedId || (now - lastScanTime) > 3000) {
+          lastScannedId = decodedText;
+          lastScanTime = now;
+          processCheckIn(decodedText);
+        }
+      }
+
+      async function startCameraScan() {
+        if (!html5QrCode) return;
+        try {
+          scanPlaceholder.classList.add('hidden');
+          laserLine.classList.remove('hidden');
+          startScanBtn.classList.add('hidden');
+          stopScanBtn.classList.remove('hidden');
+          
+          await html5QrCode.start(
+            { facingMode: "environment" },
+            {
+              fps: 10,
+              qrbox: (width, height) => {
+                const size = Math.min(width, height) * 0.7;
+                return { width: size, height: size };
+              }
+            },
+            onScanSuccess,
+            (errorMessage) => {
+              // Ignore failure logs to avoid polluting the console
+            }
+          );
+          isScanning = true;
+        } catch (err) {
+          console.error("Error starting camera scan:", err);
+          showCheckinError("Error: Could not access camera. Please check permissions.");
+          stopCameraScan();
+        }
+      }
+
+      async function stopCameraScan() {
+        if (!html5QrCode || !isScanning) {
+          scanPlaceholder.classList.remove('hidden');
+          laserLine.classList.add('hidden');
+          startScanBtn.classList.remove('hidden');
+          stopScanBtn.classList.add('hidden');
+          return;
+        }
+        try {
+          await html5QrCode.stop();
+        } catch (err) {
+          console.error("Error stopping camera scan:", err);
+        } finally {
+          isScanning = false;
+          scanPlaceholder.classList.remove('hidden');
+          laserLine.classList.add('hidden');
+          startScanBtn.classList.remove('hidden');
+          stopScanBtn.classList.add('hidden');
+        }
+      }
+
+      if (startScanBtn) {
+        startScanBtn.addEventListener('click', startCameraScan);
+      }
+      if (stopScanBtn) {
+        stopScanBtn.addEventListener('click', stopCameraScan);
+      }
+
+      if (triggerFileScanBtn && fileInput) {
+        triggerFileScanBtn.addEventListener('click', () => {
+          fileInput.click();
+        });
+      }
+
+      if (fileInput) {
+        fileInput.addEventListener('change', async (e) => {
+          if (e.target.files.length === 0) return;
+          const imageFile = e.target.files[0];
+          
+          if (isScanning) {
+            await stopCameraScan();
+          }
+
+          try {
+            const tempScanner = new Html5Qrcode("qr-reader-temp");
+            const decodedText = await tempScanner.scanFile(imageFile, true);
+            processCheckIn(decodedText);
+            fileInput.value = '';
+            tempScanner.clear();
+          } catch (err) {
+            console.error("Error scanning file:", err);
+            showCheckinError("Error: Could not find any QR code in this image.");
+            fileInput.value = '';
+          }
+        });
+      }
+
+      if (simulateScanBtn) {
+        simulateScanBtn.addEventListener('click', () => {
+          const approvedUnused = cachedTickets.filter(t => (t.approval || 'approved') === 'approved' && t.status !== 'checked-in');
+          if (approvedUnused.length === 0) {
+            alert("No approved unused tickets found to simulate scan!");
+            return;
+          }
+          
+          let msg = "Select/Copy a Ticket ID to simulate scanning:\n\n";
+          approvedUnused.slice(0, 5).forEach((t, i) => {
+            msg += `${i + 1}. ${t.id} (${t.email})\n`;
+          });
+          msg += "\nEnter Ticket ID to scan:";
+          
+          const defaultVal = approvedUnused[0].id;
+          const chosenId = prompt(msg, defaultVal);
+          if (chosenId) {
+            processCheckIn(chosenId);
+          }
+        });
       }
 
       // Manual ticket submit
