@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==========================================================================
   const EMAILJS_CONFIG = {
     enabled: true,         // Set to true to enable real email ticket delivery
-    serviceId: "service_f21b4re",   // Replace with your EmailJS Service ID
+    serviceId: "service_5wkf1x6",   // EmailJS Service ID
     templateId: "template_1xt2cwe", // Replace with your EmailJS Template ID
     publicKey: "RZEH3XtJuPRExpou5"       // Replace with your EmailJS Public Key (User ID)
   };
