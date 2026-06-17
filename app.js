@@ -9,9 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==========================================================================
   const EMAILJS_CONFIG = {
     enabled: true,         // Set to true to enable real email ticket delivery
-    serviceId: "service_xxxx",   // Replace with your EmailJS Service ID
-    templateId: "template_xxxx", // Replace with your EmailJS Template ID
-    publicKey: "user_xxxx"       // Replace with your EmailJS Public Key (User ID)
+    serviceId: "service_f21b4re",   // Replace with your EmailJS Service ID
+    templateId: "template_1xt2cwe", // Replace with your EmailJS Template ID
+    publicKey: "RZEH3XtJuPRExpou5"       // Replace with your EmailJS Public Key (User ID)
   };
 
   // Sync config with localStorage so other pages (like user dashboard) can access it
