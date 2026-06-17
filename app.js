@@ -669,6 +669,16 @@ document.addEventListener('DOMContentLoaded', () => {
       successEmailTarget.textContent = email;
     }
 
+    const successMsg = document.getElementById('success-email-msg');
+    const localConfig = JSON.parse(localStorage.getItem('emailjsConfig') || '{}');
+    if (successMsg) {
+      if (localConfig.enabled) {
+        successMsg.innerHTML = `A booking confirmation containing your digital tickets has been sent to your email at <strong>${email}</strong>.`;
+      } else {
+        successMsg.innerHTML = `A booking confirmation containing your digital tickets has been simulated and emailed to <strong>${email}</strong>.`;
+      }
+    }
+
     const ticketsContainer = document.getElementById('user-tickets-container');
     if (ticketsContainer) {
       ticketsContainer.innerHTML = '';
@@ -839,10 +849,69 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('justBookedEmail', email);
     quantity = 0;
     updateCalculations();
+
+    // Call real EmailJS dispatch in background if configured and enabled
+    (async () => {
+      let emailjsConfig = {};
+      try {
+        const configRef = doc(db, 'settings', 'emailjs');
+        const configSnap = await getDoc(configRef);
+        if (configSnap.exists()) {
+          emailjsConfig = configSnap.data();
+        }
+      } catch (e) {
+        console.warn("Could not fetch emailjs config from Firestore, using localStorage:", e);
+      }
+      const localConfig = JSON.parse(localStorage.getItem('emailjsConfig') || '{}');
+      emailjsConfig = { ...emailjsConfig, ...localConfig };
+
+      if (emailjsConfig.enabled && emailjsConfig.serviceId && emailjsConfig.templateId && emailjsConfig.publicKey) {
+        sendEmailJSTicket(email, newTicketIds, emailjsConfig);
+      }
+    })();
+
     if (redirect) {
       window.location.href = 'user-dashboard.html';
     } else {
       return newTicketIds;
+    }
+  }
+
+  async function sendEmailJSTicket(email, ticketIds, config) {
+    const templateParams = {
+      to_email: email,
+      to_name: email.split('@')[0],
+      ticket_ids: ticketIds.join(', '),
+      quantity: ticketIds.length,
+      event_name: "Ebc 28th Meetup",
+      event_date: "Sunday, June 14, 2026",
+      event_time: "9:00 AM - 11:00 AM (Asia/Kolkata)",
+      event_venue: "Birch Cafe, Hyderabad",
+      ticket_details: ticketIds.map((id, i) => `Pass ${i + 1} of ${ticketIds.length}: ${id}`).join('\n')
+    };
+
+    try {
+      const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          service_id: config.serviceId,
+          template_id: config.templateId,
+          user_id: config.publicKey,
+          template_params: templateParams
+        })
+      });
+
+      if (response.ok) {
+        console.log("Real ticket email sent successfully via EmailJS.");
+      } else {
+        const errText = await response.text();
+        console.error("EmailJS API responded with error:", errText);
+      }
+    } catch (err) {
+      console.error("Failed to send real ticket email via EmailJS:", err);
     }
   }
 

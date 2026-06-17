@@ -152,7 +152,7 @@
         <span style="font-size: 1.5rem; line-height: 1;">🎉</span>
         <div style="flex: 1;">
           <h4 style="color: #065f46; font-size: 0.95rem; font-weight: 700; margin: 0 0 0.2rem 0;">Registration Successful!</h4>
-          <p style="color: #047857; font-size: 0.85rem; margin: 0; line-height: 1.4;">A booking confirmation receipt containing your digital tickets has been simulated and emailed to <strong id="alert-email-target"></strong>.</p>
+          <p id="booking-success-msg" style="color: #047857; font-size: 0.85rem; margin: 0; line-height: 1.4;">A booking confirmation receipt containing your digital tickets has been simulated and emailed to <strong id="alert-email-target"></strong>.</p>
         </div>
       </div>
       <div style="display: flex; gap: 0.5rem; padding-left: 2.25rem;">
@@ -546,6 +546,15 @@
 
         if (successAlert && alertEmailTarget) {
           alertEmailTarget.textContent = email;
+          const successMsg = document.getElementById('booking-success-msg');
+          const emailjsConfig = JSON.parse(localStorage.getItem('emailjsConfig') || '{}');
+          if (successMsg) {
+            if (emailjsConfig.enabled) {
+              successMsg.innerHTML = `A booking confirmation receipt containing your digital tickets has been sent to your email at <strong>${email}</strong>.`;
+            } else {
+              successMsg.innerHTML = `A booking confirmation receipt containing your digital tickets has been simulated and emailed to <strong id="alert-email-target">${email}</strong>.`;
+            }
+          }
           successAlert.classList.remove('hidden');
         }
 
