@@ -871,6 +871,7 @@
 
         // Optimistically show success and re-render table instantly!
         showCheckinSuccess(`Check-in Successful!`);
+        stopCameraScan(); // Auto-stop scanner on successful check-in
         renderDashboardUI();
 
         // Perform Firestore update in the background
