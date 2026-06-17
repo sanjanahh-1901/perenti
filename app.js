@@ -1,5 +1,5 @@
 import { auth as firebaseAuth, db } from './firebase-config.js';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendEmailVerification, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendEmailVerification, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 import { collection, doc, setDoc, getDoc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==========================================================================
 
   let ticketsRemaining = 60;
-  
+
   async function initEventSettings() {
     try {
       const settingsRef = doc(db, 'eventSettings', 'main');
@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error("Error parsing session:", e);
     try {
       localStorage.removeItem('currentUser');
-    } catch (_) {}
+    } catch (_) { }
   }
 
   function updateHeaderSessionUI() {
@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const qtyDec = document.getElementById('qty-dec');
   const qtyInc = document.getElementById('qty-inc');
   const qtyDisplay = document.getElementById('qty-count');
-  
+
   const summaryEmptyView = document.getElementById('summary-empty-view');
   const summaryBreakdownView = document.getElementById('summary-breakdown-view');
   const registerSubmitBtn = document.getElementById('btn-register-submit');
@@ -127,19 +127,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const removePromoBadgeBtn = document.getElementById('btn-remove-discount');
   const appliedPromoContainer = document.getElementById('applied-promo-container');
   const promoCodeName = document.getElementById('promo-code-name');
-  
+
   const promoStatusError = document.getElementById('promo-status-error');
   const promoStatusSuccess = document.getElementById('promo-status-success');
 
   const TICKET_PRICE = 399;
   const PLATFORM_FEE_PER_TICKET = 9.98;
   const GATEWAY_FEE_PER_TICKET = 12.13;
-  const GST_RATE_OF_PLATFORM = 0.18; 
+  const GST_RATE_OF_PLATFORM = 0.18;
 
   let quantity = 1;
   let isPromoApplied = false;
   const PROMO_CODE_VALID = 'EBC10';
-  const PROMO_DISCOUNT_PERCENT = 0.10; 
+  const PROMO_DISCOUNT_PERCENT = 0.10;
 
   // Read stock capacity from firestore state (handled by initEventSettings)
 
@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ticketSubtotal = quantity * TICKET_PRICE;
     const discountAmount = isPromoApplied ? (ticketSubtotal * PROMO_DISCOUNT_PERCENT) : 0;
     const finalSubtotal = ticketSubtotal - discountAmount;
-    
+
     let platformFee = quantity * PLATFORM_FEE_PER_TICKET;
     let gatewayFee = quantity * GATEWAY_FEE_PER_TICKET;
     let gst = platformFee * GST_RATE_OF_PLATFORM;
@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalAmount = finalSubtotal + platformFee + gatewayFee + gst;
 
     summaryQty.textContent = quantity;
-    
+
     if (isPromoApplied) {
       summarySubtotal.innerHTML = `<span style="text-decoration: line-through; opacity: 0.5; margin-right: 0.5rem;">₹${ticketSubtotal.toFixed(2)}</span> ₹${finalSubtotal.toFixed(2)}`;
     } else {
@@ -256,15 +256,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if (inputCode === PROMO_CODE_VALID) {
         isPromoApplied = true;
         promoCodeName.textContent = inputCode;
-        
+
         appliedPromoContainer.classList.remove('hidden');
         promoStatusSuccess.classList.remove('hidden');
-        
+
         updateCalculations();
       } else {
         promoStatusError.classList.remove('hidden');
       }
-      
+
       promoInput.value = '';
       applyPromoBtn.disabled = true;
       applyPromoBtn.classList.remove('active');
@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderDynamicQuestions() {
     if (!dynamicQuestionsContainer) return;
-    
+
     let config = JSON.parse(localStorage.getItem('customRegistrationForm'));
     if (!config || config.length === 0) {
       config = defaultFormConfig;
@@ -348,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const isReq = q.required ? '<span style="color: #ef4444;">*</span>' : '';
       const reqAttr = q.required ? 'required' : '';
       const uniqueId = q.id || `q-custom-${idx}`;
-      
+
       if (q.type === 'text') {
         html += `
           <div class="form-group" style="margin-top: 0.5rem;">
@@ -475,43 +475,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (email === 'admin@perenti.com') {
           user = { email: 'admin@perenti.com' };
         } else {
-          try {
-            const userCredential = await signInWithEmailAndPassword(firebaseAuth, email, password);
-            user = userCredential.user;
-          } catch (loginError) {
-            if (email.endsWith('@perenti.com')) {
-              try {
-                const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password);
-                user = userCredential.user;
-              } catch (createError) {
-                throw loginError;
-              }
-            } else {
-              throw loginError;
-            }
-          }
-          
-          if (!user.emailVerified && !user.email.endsWith('@perenti.com')) {
-            if (checkoutLoginError) {
-              const errorMsgSpan = document.getElementById('checkout-login-error-text');
-              if (errorMsgSpan) {
-                errorMsgSpan.innerHTML = `Please verify your email. <a href="#" id="checkout-resend" style="color: #991b1b; text-decoration: underline; font-weight: 700; margin-left: 0.25rem;">Resend Email</a>`;
-                
-                document.getElementById('checkout-resend').addEventListener('click', async (ev) => {
-                  ev.preventDefault();
-                  try {
-                    await sendEmailVerification(user);
-                    errorMsgSpan.textContent = "Verification email sent! Check inbox.";
-                  } catch (err) {
-                    console.error(err);
-                  }
-                });
-              }
-              checkoutLoginError.classList.remove('hidden');
-            }
-            await signOut(firebaseAuth);
-            return;
-          }
+          const userCredential = await signInWithEmailAndPassword(firebaseAuth, email, password);
+          user = userCredential.user;
         }
 
         // Fetch role from Firestore
@@ -524,7 +489,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (userDoc.exists()) {
               role = userDoc.data().role || 'user';
             }
-          } catch(e) { console.error("Error fetching role", e); }
+          } catch (e) { console.error("Error fetching role", e); }
         }
 
         // Store session
@@ -561,28 +526,6 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const result = await signInWithPopup(firebaseAuth, provider);
         const user = result.user;
-        
-        if (!user.emailVerified && !user.email.endsWith('@perenti.com')) {
-          if (checkoutLoginError) {
-            const errorMsgSpan = document.getElementById('checkout-login-error-text');
-            if (errorMsgSpan) {
-              errorMsgSpan.innerHTML = `Please verify your email. <a href="#" id="checkout-resend-google" style="color: #991b1b; text-decoration: underline; font-weight: 700; margin-left: 0.25rem;">Resend Email</a>`;
-              
-              document.getElementById('checkout-resend-google').addEventListener('click', async (ev) => {
-                ev.preventDefault();
-                try {
-                  await sendEmailVerification(user);
-                  errorMsgSpan.textContent = "Verification email sent! Check inbox.";
-                } catch (err) {
-                  console.error(err);
-                }
-              });
-            }
-            checkoutLoginError.classList.remove('hidden');
-          }
-          await signOut(firebaseAuth);
-          return;
-        }
 
         // Fetch role from Firestore
         let role = 'user';
@@ -594,7 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (userDoc.exists()) {
               role = userDoc.data().role || 'user';
             }
-          } catch(e) { console.error("Error fetching role", e); }
+          } catch (e) { console.error("Error fetching role", e); }
         }
 
         session = { email: user.email, role: role };
@@ -640,12 +583,12 @@ document.addEventListener('DOMContentLoaded', () => {
           alert("Event administrators cannot book passes. Please register or log in as a General User to proceed.");
           return;
         }
-        
+
         // Hide summary and complete booking
         if (registrationSummaryModal) {
           registrationSummaryModal.classList.add('hidden');
         }
-        
+
         try {
           const ticketIds = await bookTicketsForUser(session.email, quantity, 'offline', false);
           showRegistrationSuccess(session.email, ticketIds);
@@ -681,14 +624,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (registrationQuestionsForm) {
     registrationQuestionsForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      
+
       // Capture answers from form inputs
       const answers = {};
       let config = JSON.parse(localStorage.getItem('customRegistrationForm'));
       if (!config || config.length === 0) {
         config = defaultFormConfig;
       }
-      
+
       config.forEach((q, idx) => {
         const uniqueId = q.id || `q-custom-${idx}`;
         if (q.type === 'text' || q.type === 'textarea' || q.type === 'select') {
@@ -704,9 +647,9 @@ document.addEventListener('DOMContentLoaded', () => {
           answers[q.label] = checkbox ? (checkbox.checked ? 'Yes' : 'No') : 'No';
         }
       });
-      
+
       sessionStorage.setItem('currentBookingAnswers', JSON.stringify(answers));
-      
+
       // Hide questions modal
       if (registrationQuestionsModal) {
         registrationQuestionsModal.classList.add('hidden');
@@ -841,7 +784,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const settingsRef = doc(db, 'eventSettings', 'main');
       await updateDoc(settingsRef, { ticketsRemaining });
-    } catch(e) { console.error("Error updating settings", e); }
+    } catch (e) { console.error("Error updating settings", e); }
 
     // Retrieve and parse temporary answers
     let answers = {};
@@ -867,10 +810,10 @@ document.addEventListener('DOMContentLoaded', () => {
         timestamp: new Date().toLocaleString(),
         answers: answers
       };
-      
+
       try {
         await setDoc(doc(db, 'tickets', ticketIdStr), ticketData);
-      } catch(e) {
+      } catch (e) {
         console.warn("Firestore write failed, saving ticket locally:", e);
       }
 
@@ -881,13 +824,13 @@ document.addEventListener('DOMContentLoaded', () => {
           localTickets.push(ticketData);
           localStorage.setItem('tickets', JSON.stringify(localTickets));
         }
-      } catch(localErr) {
+      } catch (localErr) {
         console.error("Failed to save ticket locally:", localErr);
       }
-      
+
       newTicketIds.push(ticketIdStr);
     }
-    
+
     // Clear temporary answers
     sessionStorage.removeItem('currentBookingAnswers');
 
@@ -932,7 +875,7 @@ document.addEventListener('DOMContentLoaded', () => {
     menuItems.forEach(item => {
       item.addEventListener('click', (e) => {
         e.stopPropagation();
-        
+
         // Hide menu
         shareBtn.setAttribute('aria-expanded', 'false');
         shareMenu.classList.remove('show');
@@ -940,34 +883,34 @@ document.addEventListener('DOMContentLoaded', () => {
         const action = item.getAttribute('data-action');
         const shareUrl = window.location.href;
         const shareText = "Check out the Ebc 28th Meetup on Perenti! Join other founders & builders:";
-        
+
         switch (action) {
           case 'copy':
             navigator.clipboard.writeText(shareUrl).then(() => {
               showToast("Link copied to clipboard!");
             }).catch(err => console.error("Failed to copy link: ", err));
             break;
-            
+
           case 'whatsapp':
             const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
             window.open(waUrl, '_blank');
             break;
-            
+
           case 'facebook':
             const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
             window.open(fbUrl, '_blank');
             break;
-            
+
           case 'twitter':
             const twUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
             window.open(twUrl, '_blank');
             break;
-            
+
           case 'snapchat':
             const scUrl = `https://www.snapchat.com/share?url=${encodeURIComponent(shareUrl)}`;
             window.open(scUrl, '_blank');
             break;
-            
+
           case 'instagram':
             // Copy URL and open Instagram since direct story/feed share via URL is restricted
             navigator.clipboard.writeText(shareUrl).then(() => {
@@ -977,7 +920,7 @@ document.addEventListener('DOMContentLoaded', () => {
               }, 1200);
             }).catch(err => console.error("Failed to copy link: ", err));
             break;
-            
+
           case 'linkedin':
             const liUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
             window.open(liUrl, '_blank');
@@ -1003,7 +946,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Parse URL redirect parameters to restore checkout state
   const urlParams = new URLSearchParams(window.location.search);
   const triggerQty = urlParams.get('qty');
-  
+
   if (triggerQty && parseInt(triggerQty) > 0) {
     quantity = parseInt(triggerQty);
     updateCalculations();
@@ -1016,7 +959,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const attendeesCountVal = document.getElementById('attendees-count-val');
   const attendeeProfileModal = document.getElementById('attendee-profile-modal');
   const closeAttendeeModalBtn = document.getElementById('btn-close-attendee-modal');
-  
+
   const modalAttendeeAvatar = document.getElementById('modal-attendee-avatar');
   const modalAttendeeName = document.getElementById('modal-attendee-name');
   const modalAttendeeEmail = document.getElementById('modal-attendee-email');
@@ -1036,10 +979,10 @@ document.addEventListener('DOMContentLoaded', () => {
       querySnapshot.forEach((docSnap) => {
         tickets.push(docSnap.data());
       });
-    } catch(e) {
+    } catch (e) {
       console.error("Error fetching attendees list", e);
     }
-    
+
     // Group tickets by email to list unique attendees
     const attendeesMap = new Map();
     tickets.forEach(ticket => {
@@ -1069,7 +1012,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const uniqueAttendees = Array.from(attendeesMap.values());
-    
+
     if (attendeesCountVal) {
       attendeesCountVal.textContent = uniqueAttendees.length;
     }
@@ -1105,7 +1048,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const row = document.createElement('button');
       row.type = 'button';
       row.className = 'attendee-item-row';
-      
+
       const statusLabel = attendee.checkedIn ? 'Checked In' : 'Registered';
       const statusClass = attendee.checkedIn ? 'checked-in' : 'registered';
 
@@ -1133,7 +1076,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (modalAttendeeAvatar) modalAttendeeAvatar.textContent = firstLetter;
     if (modalAttendeeName) modalAttendeeName.textContent = displayName;
     if (modalAttendeeEmail) modalAttendeeEmail.textContent = attendee.email;
-    
+
     if (modalAttendeeStatus) {
       modalAttendeeStatus.textContent = attendee.checkedIn ? 'Checked In' : 'Registered';
       modalAttendeeStatus.className = `attendee-status-indicator ${attendee.checkedIn ? 'checked-in' : 'registered'}`;

@@ -188,18 +188,17 @@
             });
           } catch(e) { console.error("Error saving user role", e); }
 
-          // Send verification email
-          await sendEmailVerification(user);
-          
-          // Sign out the user so they are forced to log in after verifying
-          await signOut(auth);
+          // Store session immediately
+          localStorage.setItem('currentUser', JSON.stringify({ email: user.email, role: role }));
 
-          // Build a login redirect string preserving the state
-          let targetLoginUrl = 'login.html?verify_prompt=1';
-          if (redirectQty) targetLoginUrl += `&qty=${redirectQty}`;
-          if (redirectUrl) targetLoginUrl += `&redirect=${encodeURIComponent(redirectUrl)}`;
-          
-          window.location.href = targetLoginUrl;
+          // Redirect immediately or book tickets if coming from booking flow
+          if (redirectQty && parseInt(redirectQty) > 0) {
+            await bookTicketsForUser(user.email, parseInt(redirectQty), 'offline');
+          } else if (redirectUrl) {
+            window.location.href = redirectUrl;
+          } else {
+            window.location.href = 'user-dashboard.html';
+          }
         } catch (error) {
           console.error("Error signing up:", error);
           errorText.textContent = error.message;
