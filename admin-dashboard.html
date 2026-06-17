@@ -232,7 +232,7 @@
       transform: translate(-50%, -50%);
       border: 1px solid rgba(90, 154, 142, 0.4);
       border-radius: 0.5rem;
-      box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.65); /* dark mask backdrop overlay */
+      box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.65);
       z-index: 2;
       overflow: hidden;
       pointer-events: none;
@@ -259,6 +259,125 @@
     .scanner-overlay-corner.top-right { border-top-width: 3px; border-right-width: 3px; border-top-right-radius: 4px; top: 0; right: 0; }
     .scanner-overlay-corner.bottom-left { border-bottom-width: 3px; border-left-width: 3px; border-bottom-left-radius: 4px; bottom: 0; left: 0; }
     .scanner-overlay-corner.bottom-right { border-bottom-width: 3px; border-right-width: 3px; border-bottom-right-radius: 4px; bottom: 0; right: 0; }
+
+    /* ── Check-in Success Flash Overlay ── */
+    @keyframes checkin-overlay-in {
+      from { opacity: 0; transform: scale(0.92); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes checkin-overlay-out {
+      from { opacity: 1; transform: scale(1); }
+      to   { opacity: 0; transform: scale(1.04); }
+    }
+    @keyframes checkmark-draw {
+      from { stroke-dashoffset: 80; }
+      to   { stroke-dashoffset: 0; }
+    }
+    @keyframes checkmark-ring {
+      0%   { transform: scale(0.6); opacity: 0; }
+      60%  { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+    @keyframes countdown-bar {
+      from { width: 100%; }
+      to   { width: 0%; }
+    }
+    @keyframes confetti-fall {
+      0%   { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(220px) rotate(720deg); opacity: 0; }
+    }
+    #checkin-success-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    #checkin-success-overlay.visible {
+      display: flex;
+      animation: checkin-overlay-in 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    #checkin-success-overlay.hiding {
+      animation: checkin-overlay-out 0.25s ease-in both;
+    }
+    .checkin-success-card {
+      background: #ffffff;
+      border-radius: 1.5rem;
+      padding: 2.5rem 2rem 1.75rem;
+      max-width: 380px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.45);
+      position: relative;
+      overflow: hidden;
+    }
+    .checkin-ring {
+      width: 96px;
+      height: 96px;
+      margin: 0 auto 1.25rem;
+      animation: checkmark-ring 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .checkin-ring circle {
+      fill: none;
+      stroke: #10b981;
+      stroke-width: 5;
+    }
+    .checkin-ring polyline {
+      fill: none;
+      stroke: #10b981;
+      stroke-width: 5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 80;
+      stroke-dashoffset: 80;
+      animation: checkmark-draw 0.4s 0.25s ease-out forwards;
+    }
+    .checkin-success-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #065f46;
+      margin: 0 0 0.25rem;
+      letter-spacing: -0.5px;
+    }
+    .checkin-success-sub {
+      font-size: 0.85rem;
+      color: #6b7280;
+      margin: 0 0 1.25rem;
+    }
+    .checkin-detail-chip {
+      display: inline-block;
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      border-radius: 999px;
+      padding: 0.3rem 0.9rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #065f46;
+      margin: 0.2rem 0.15rem;
+      font-family: monospace;
+      letter-spacing: 0.02em;
+    }
+    .checkin-countdown-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #10b981, #34d399);
+      border-radius: 0 0 0 1.5rem;
+      animation: countdown-bar 3s linear forwards;
+    }
+    .checkin-confetti-canvas {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border-radius: 1.5rem;
+      overflow: hidden;
+    }
   </style>
 </head>
 <body class="dashboard-page-wrapper">
@@ -316,15 +435,7 @@
       </div>
     </div>
     
-    <!-- Live check-in success/error banners -->
-    <div class="admin-scan-result-banner hidden" id="admin-scan-success-banner">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="banner-success-svg">
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-        <polyline points="22 4 12 14.01 9 11.01"></polyline>
-      </svg>
-      <span id="admin-scan-success-text">Check-in successful!</span>
-    </div>
-    
+    <!-- Live check-in error banner (kept slim) -->
     <div class="admin-scan-result-banner error hidden" id="admin-scan-error-banner">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="banner-error-svg">
         <circle cx="12" cy="12" r="10"></circle>
@@ -332,6 +443,21 @@
         <line x1="12" y1="16" x2="12.01" y2="16"></line>
       </svg>
       <span id="admin-scan-error-text">Check-in failed!</span>
+    </div>
+
+    <!-- Full-screen Check-in Success Overlay -->
+    <div id="checkin-success-overlay" role="dialog" aria-modal="true" aria-label="Check-in successful">
+      <div class="checkin-success-card">
+        <canvas class="checkin-confetti-canvas" id="checkin-confetti-canvas"></canvas>
+        <svg class="checkin-ring" viewBox="0 0 96 96">
+          <circle cx="48" cy="48" r="44"/>
+          <polyline points="26,50 42,66 70,34"/>
+        </svg>
+        <p class="checkin-success-title">Check-in Successful!</p>
+        <p class="checkin-success-sub" id="checkin-overlay-sub">Attendee verified &amp; admitted</p>
+        <div id="checkin-overlay-chips"></div>
+        <div class="checkin-countdown-bar" id="checkin-countdown-bar"></div>
+      </div>
     </div>
 
     <!-- My Events Section -->
@@ -870,7 +996,7 @@
         localStorage.setItem('tickets', JSON.stringify(localTickets));
 
         // Optimistically show success and re-render table instantly!
-        showCheckinSuccess(`Check-in Successful!`);
+        showCheckinSuccess(ticket.email, cleanId);
         stopCameraScan(); // Auto-stop scanner on successful check-in
         renderDashboardUI();
 
@@ -888,13 +1014,112 @@
         })();
       }
 
-      function showCheckinSuccess(msg) {
-        adminSuccessText.textContent = msg;
-        adminSuccessBanner.classList.remove('hidden');
-        setTimeout(() => {
-          adminSuccessBanner.classList.add('hidden');
-        }, 5000);
+      // ── Full-screen Check-in Success Overlay ──
+      const checkinOverlay    = document.getElementById('checkin-success-overlay');
+      const checkinOverlaySub = document.getElementById('checkin-overlay-sub');
+      const checkinChips      = document.getElementById('checkin-overlay-chips');
+      const checkinBar        = document.getElementById('checkin-countdown-bar');
+      const confettiCanvas    = document.getElementById('checkin-confetti-canvas');
+      let overlayTimer = null;
+
+      function playBeep() {
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(880, ctx.currentTime);
+          osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
+          gain.gain.setValueAtTime(0.35, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+          osc.start(ctx.currentTime);
+          osc.stop(ctx.currentTime + 0.35);
+        } catch(e) {/* audio blocked – silently skip */}
       }
+
+      function launchConfetti() {
+        const canvas = confettiCanvas;
+        const card   = canvas.parentElement;
+        canvas.width  = card.offsetWidth;
+        canvas.height = card.offsetHeight;
+        const ctx = canvas.getContext('2d');
+        const colors = ['#10b981','#34d399','#6ee7b7','#059669','#a7f3d0','#ffffff'];
+        const pieces = Array.from({ length: 55 }, () => ({
+          x: Math.random() * canvas.width,
+          y: -10 - Math.random() * 30,
+          r: 4 + Math.random() * 5,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          speedY: 1.5 + Math.random() * 3,
+          speedX: (Math.random() - 0.5) * 2,
+          rot: Math.random() * 360,
+          rotSpeed: (Math.random() - 0.5) * 8,
+          opacity: 1
+        }));
+        let frame;
+        function draw() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          let alive = false;
+          pieces.forEach(p => {
+            p.y += p.speedY; p.x += p.speedX; p.rot += p.rotSpeed;
+            p.opacity = Math.max(0, p.opacity - 0.008);
+            if (p.opacity > 0) alive = true;
+            ctx.save();
+            ctx.globalAlpha = p.opacity;
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot * Math.PI / 180);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * 1.8);
+            ctx.restore();
+          });
+          if (alive) frame = requestAnimationFrame(draw);
+        }
+        draw();
+        return () => cancelAnimationFrame(frame);
+      }
+
+      function showCheckinSuccess(email, ticketId) {
+        // Clear any running previous overlay
+        if (overlayTimer) clearTimeout(overlayTimer);
+        checkinOverlay.classList.remove('hiding');
+
+        // Populate details
+        checkinOverlaySub.textContent = 'Attendee verified & admitted';
+        checkinChips.innerHTML = [
+          email   ? `<span class="checkin-detail-chip">${email}</span>` : '',
+          ticketId? `<span class="checkin-detail-chip">${ticketId}</span>` : ''
+        ].join('');
+
+        // Reset & restart countdown bar animation
+        checkinBar.style.animation = 'none';
+        // Force reflow
+        void checkinBar.offsetWidth;
+        checkinBar.style.animation = 'countdown-bar 3s linear forwards';
+
+        // Show overlay
+        checkinOverlay.classList.add('visible');
+
+        // Play beep + confetti
+        playBeep();
+        const stopConfetti = launchConfetti();
+
+        // Auto-dismiss after 3 s
+        overlayTimer = setTimeout(() => {
+          checkinOverlay.classList.add('hiding');
+          stopConfetti();
+          setTimeout(() => {
+            checkinOverlay.classList.remove('visible', 'hiding');
+          }, 260);
+        }, 3000);
+      }
+
+      // Dismiss on click
+      checkinOverlay.addEventListener('click', () => {
+        if (overlayTimer) clearTimeout(overlayTimer);
+        checkinOverlay.classList.add('hiding');
+        setTimeout(() => checkinOverlay.classList.remove('visible', 'hiding'), 260);
+      });
 
       function showCheckinError(msg) {
         adminErrorText.textContent = msg;
@@ -936,78 +1161,56 @@
       async function startCameraScan() {
         if (isScanning || isStartingScan) return;
         isStartingScan = true;
-        
+
         try {
           scanPlaceholder.classList.add('hidden');
           if (scannerOverlay) scannerOverlay.classList.remove('hidden');
           startScanBtn.classList.add('hidden');
           stopScanBtn.classList.remove('hidden');
-          
+
+          // Derive a square qrbox that fits inside the viewfinder (78% of shorter side)
+          const viewfinder = document.querySelector('.scanner-viewfinder');
+          const vw = viewfinder ? viewfinder.offsetWidth  : 320;
+          const vh = viewfinder ? viewfinder.offsetHeight : 240;
+          const boxSize = Math.floor(Math.min(vw, vh) * 0.78);
+
           const scanConfig = {
-            fps: 10,
-            useBarCodeDetectorIfSupported: true
+            fps: 30,                                    // 3x more frames sampled per second
+            qrbox: { width: boxSize, height: boxSize }, // Focus on center region only — biggest speed gain
+            aspectRatio: vw / vh,                       // Match viewfinder ratio
+            experimentalFeatures: {
+              useBarCodeDetectorIfSupported: true         // Use native BarcodeDetector API when available
+            }
           };
 
-          // 1. Query all available camera devices
-          const devices = await Html5Qrcode.getCameras();
-          if (!devices || devices.length === 0) {
-            throw new Error("No camera devices found.");
-          }
-
-          // 2. Select the rear/back-facing camera if present, otherwise default to first camera
-          let selectedCameraId = null;
-          for (const device of devices) {
-            const label = (device.label || "").toLowerCase();
-            if (label.includes("back") || label.includes("rear") || label.includes("environment") || label.includes("direction: back")) {
-              selectedCameraId = device.id;
-              break;
-            }
-          }
-          if (!selectedCameraId) {
-            selectedCameraId = devices[0].id;
-          }
-
-          // Force recreate the Html5Qrcode instance to clean up any stuck transition states from previous failed attempts
+          // Clean up any stuck state from a previous session
           if (html5QrCode) {
-            try {
-              if (html5QrCode.isScanning) {
-                await html5QrCode.stop();
-              }
-            } catch (stopErr) {
-              // Ignore stop errors when resetting
-            }
+            try { await html5QrCode.stop(); } catch (_) {}
           }
           html5QrCode = new Html5Qrcode("qr-reader");
 
-          // 3. Try to start scanning with ideal HD constraints
+          // Try environment (rear) camera first, then fall back to first available device
           try {
             await html5QrCode.start(
-              {
-                deviceId: selectedCameraId,
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
-              },
+              { facingMode: "environment" },
               scanConfig,
               onScanSuccess,
-              (errorMessage) => {
-                // Ignore debug frame failures to prevent polluting console
-              }
+              () => {} // Silence per-frame "no QR found" noise
             );
-            isScanning = true;
-          } catch (firstErr) {
-            console.warn("Failed to start camera scan with HD constraints, trying raw ID fallback:", firstErr);
-            // Re-instantiate again to completely clear the transition state
-            html5QrCode = new Html5Qrcode("qr-reader");
+          } catch (_) {
+            // facingMode not supported (e.g. desktop single webcam) — use device ID
+            const devices = await Html5Qrcode.getCameras();
+            if (!devices || devices.length === 0) throw new Error("No camera found.");
+            html5QrCode = new Html5Qrcode("qr-reader"); // fresh instance after failed start
             await html5QrCode.start(
-              selectedCameraId,
+              devices[0].id,
               scanConfig,
               onScanSuccess,
-              (errorMessage) => {
-                // Ignore debug frame failures to prevent polluting console
-              }
+              () => {}
             );
-            isScanning = true;
           }
+
+          isScanning = true;
         } catch (err) {
           console.error("Error starting camera scan:", err);
           showCheckinError("Error: Could not access camera. Please check permissions.");
