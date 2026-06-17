@@ -2629,3 +2629,120 @@ h1, h2, h3, h4, h5, h6 {
 .btn-create-event:hover svg {
   transform: translateY(-2px);
 }
+
+/* ==========================================================================
+   Comprehensive Responsiveness Audit Fixes (Appended overrides)
+   ========================================================================== */
+
+/* 1. Global Constraints & Overflows */
+* {
+  overflow-wrap: break-word;
+}
+body {
+  overflow-x: hidden;
+}
+
+/* 2. Tablet Breakpoint (max-width: 1024px) */
+@media (max-width: 1024px) {
+  /* Admin & Event Layouts */
+  .admin-grid-layout, .event-grid-layout {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem;
+  }
+}
+
+/* 3. Mobile Breakpoint (max-width: 768px) */
+@media (max-width: 768px) {
+  /* Header & Navigation */
+  .header-container {
+    padding: 0.75rem 1rem;
+  }
+  
+  /* Auth Headers */
+  .auth-nav {
+    padding: 1rem;
+  }
+  
+  /* Containers Padding */
+  .content-wrapper {
+    padding: 1.5rem 1rem;
+  }
+  .dashboard-main-content {
+    padding: 1.5rem 1rem;
+  }
+  .event-banner-section {
+    padding: 1.5rem;
+  }
+  
+  /* Cards & Grids */
+  .event-cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Modals */
+  .modal-card {
+    margin: 1rem;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-body {
+    overflow-y: auto;
+  }
+}
+
+/* 4. Small Mobile Breakpoint (max-width: 480px) */
+@media (max-width: 480px) {
+  /* Header Scaling */
+  .brand-name {
+    font-size: 1.2rem;
+  }
+  .header-actions {
+    gap: 0.5rem;
+  }
+  
+  /* Banner / Hero */
+  .event-main-title {
+    font-size: 1.75rem;
+  }
+  .event-banner-section {
+    padding: 1.25rem;
+  }
+
+  /* Force Poster Image to take full width above text */
+  .banner-poster-col {
+    max-width: 100% !important;
+  }
+  .event-poster-img {
+    width: 100%;
+  }
+
+  /* Cards & Grids (1 column) */
+  .event-cards-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Modals & Popups */
+  .modal-card {
+    margin: 0.5rem;
+  }
+  .modal-body {
+    padding: 1rem;
+  }
+  
+  /* Forms */
+  .promo-input-row {
+    flex-direction: column;
+  }
+  .promo-textbox {
+    width: 100%;
+  }
+  .btn-promo-apply {
+    width: 100%;
+  }
+  
+  /* Empty States */
+  .empty-tickets-view {
+    padding: 2rem 1rem;
+  }
+}
