@@ -1,6 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>
+    window.addEventListener('error', function(e) {
+      const errDiv = document.createElement('div');
+      errDiv.className = 'debug-error';
+      errDiv.style.color = 'red';
+      errDiv.style.background = '#fee2e2';
+      errDiv.style.padding = '10px';
+      errDiv.style.border = '1px solid red';
+      errDiv.style.margin = '10px';
+      errDiv.style.fontSize = '12px';
+      errDiv.style.zIndex = '99999';
+      errDiv.style.position = 'relative';
+      errDiv.textContent = 'Global Error: ' + e.message + ' at ' + e.filename + ':' + e.lineno;
+      document.documentElement.appendChild(errDiv);
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+      const errDiv = document.createElement('div');
+      errDiv.className = 'debug-error';
+      errDiv.style.color = 'red';
+      errDiv.style.background = '#fee2e2';
+      errDiv.style.padding = '10px';
+      errDiv.style.border = '1px solid red';
+      errDiv.style.margin = '10px';
+      errDiv.style.fontSize = '12px';
+      errDiv.style.zIndex = '99999';
+      errDiv.style.position = 'relative';
+      errDiv.textContent = 'Unhandled Rejection: ' + e.reason;
+      document.documentElement.appendChild(errDiv);
+    });
+    const originalConsoleError = console.error;
+    console.error = function(...args) {
+      const errDiv = document.createElement('div');
+      errDiv.className = 'debug-error';
+      errDiv.style.color = 'orange';
+      errDiv.style.background = '#ffedd5';
+      errDiv.style.padding = '10px';
+      errDiv.style.border = '1px solid orange';
+      errDiv.style.margin = '10px';
+      errDiv.style.fontSize = '12px';
+      errDiv.style.zIndex = '99999';
+      errDiv.style.position = 'relative';
+      errDiv.textContent = 'Console Error: ' + args.join(' ');
+      document.documentElement.appendChild(errDiv);
+      originalConsoleError.apply(console, args);
+    };
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard | Perenti</title>
@@ -296,7 +342,10 @@
           </div>
 
           <div class="admin-manual-checkin">
-            <span class="admin-label-small">MANUAL TICKET CHECK-IN</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+              <span class="admin-label-small" style="margin: 0;">MANUAL TICKET CHECK-IN</span>
+              <a href="#" id="btn-simulate-qr-scan" style="font-size: 0.75rem; color: var(--brand-primary); font-weight: 600; text-decoration: none;">🧪 Simulate Scan</a>
+            </div>
             <div class="manual-checkin-row">
               <input type="text" id="manual-ticket-id-input" class="promo-textbox" placeholder="Enter Ticket ID (e.g. PRNT-EBC28-...)" aria-label="Manual Ticket check-in input">
               <button type="button" class="btn btn-primary btn-sm" id="btn-admin-manual-checkin">Verify</button>
@@ -845,7 +894,11 @@
           stopScanBtn.classList.remove('hidden');
           
           await html5QrCode.start(
-            { facingMode: "environment" },
+            {
+              facingMode: "environment",
+              width: { min: 640, ideal: 1280, max: 1920 },
+              height: { min: 480, ideal: 720, max: 1080 }
+            },
             {
               fps: 15
             },
@@ -896,6 +949,31 @@
         processCheckIn(tId);
         manualTicketInput.value = '';
       });
+
+      // Simulate QR scan
+      const simulateScanBtn = document.getElementById('btn-simulate-qr-scan');
+      if (simulateScanBtn) {
+        simulateScanBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const approvedUnused = cachedTickets.filter(t => (t.approval || 'approved') === 'approved' && t.status !== 'checked-in');
+          if (approvedUnused.length === 0) {
+            alert("No approved unused tickets found to simulate scan!");
+            return;
+          }
+          
+          let msg = "Select/Copy a Ticket ID to simulate scanning:\n\n";
+          approvedUnused.slice(0, 5).forEach((t, i) => {
+            msg += `${i + 1}. ${t.id} (${t.email})\n`;
+          });
+          msg += "\nEnter Ticket ID to scan:";
+          
+          const defaultVal = approvedUnused[0].id;
+          const chosenId = prompt(msg, defaultVal);
+          if (chosenId) {
+            processCheckIn(chosenId);
+          }
+        });
+      }
 
       // Search and Filter inputs
       attendeeSearchInput.addEventListener('input', (e) => {
