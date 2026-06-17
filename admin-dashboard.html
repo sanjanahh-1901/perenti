@@ -947,36 +947,34 @@
             }
           };
 
-          // Fallback camera constraint sequence
-          try {
-            // Attempt 1: back camera with resolution preferences
-            await html5QrCode.start(
-              { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
-              scanConfig,
-              onScanSuccess,
-              () => {}
-            );
-          } catch (err1) {
-            console.warn("Camera start with environment failed, trying user camera...", err1);
-            try {
-              // Attempt 2: front camera with resolution preferences (laptop webcams)
-              await html5QrCode.start(
-                { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
-                scanConfig,
-                onScanSuccess,
-                () => {}
-              );
-            } catch (err2) {
-              console.warn("Camera start with user failed, trying default camera...", err2);
-              // Attempt 3: absolute fallback - default browser selected camera with no resolution constraints
-              await html5QrCode.start(
-                {},
-                scanConfig,
-                onScanSuccess,
-                () => {}
-              );
+          // 1. Query all available camera devices
+          const devices = await Html5Qrcode.getCameras();
+          if (!devices || devices.length === 0) {
+            throw new Error("No camera devices found.");
+          }
+
+          // 2. Select the rear/back-facing camera if present, otherwise default to first camera
+          let selectedCameraId = null;
+          for (const device of devices) {
+            const label = (device.label || "").toLowerCase();
+            if (label.includes("back") || label.includes("rear") || label.includes("environment") || label.includes("direction: back")) {
+              selectedCameraId = device.id;
+              break;
             }
           }
+          if (!selectedCameraId) {
+            selectedCameraId = devices[0].id;
+          }
+
+          // 3. Start scanning exactly once with the resolved device ID
+          await html5QrCode.start(
+            selectedCameraId,
+            scanConfig,
+            onScanSuccess,
+            (errorMessage) => {
+              // Ignore debug frame failures to prevent polluting console
+            }
+          );
           isScanning = true;
         } catch (err) {
           console.error("Error starting camera scan:", err);
