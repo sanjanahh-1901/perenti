@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | Perenti</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=19">
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    .dashboard-page-wrapper {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-primary);
+    }
+    .admin-main-content {
+      flex: 1;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .admin-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .admin-title-section h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+    .admin-title-section p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+    .admin-grid-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      margin-top: 0.5rem;
+      align-items: start;
+    }
+    .admin-grid-layout > * {
+      min-width: 0;
+    }
+    @media (min-width: 992px) {
+      .admin-grid-layout {
+        grid-template-columns: 1fr 1.4fr;
+      }
+    }
+    .admin-panel-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .admin-panel-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-main);
+      border-bottom: 1px solid var(--divider);
+      padding-bottom: 0.75rem;
+      margin-bottom: 0.25rem;
+    }
+    .search-filter-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .checked-in-list-container {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+    .badge-status {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 0.15rem 0.45rem;
+      border-radius: 0.25rem;
+      display: inline-block;
+    }
+    .badge-status.unused {
+      background-color: rgba(245, 158, 11, 0.1);
+      color: #d97706;
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+    .badge-status.checked-in {
+      background-color: rgba(16, 185, 129, 0.1);
+      color: #059669;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+    .btn-action-checkin {
+      background-color: var(--brand-primary);
+      color: #ffffff;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      border: none;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .btn-action-checkin:hover {
+      background-color: var(--brand-primary-hover);
+    }
+  </style>
+</head>
+<body class="dashboard-page-wrapper">
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="index.html" class="brand-link">
+        <span class="brand-name">perenti</span>
+      </a>
+      
+      <div class="header-actions" style="display: flex; align-items: center; gap: 0.75rem;">
+        <span class="session-email-text" id="header-admin-email" style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);"></span>
+        <a href="index.html" class="btn btn-secondary btn-sm">Meetup Page</a>
+        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-logout">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Body Content -->
+  <main class="admin-main-content">
+    <div class="admin-header-row">
+      <div class="admin-title-section">
+        <h1>Admin Check-in Dashboard</h1>
+        <p>Manage RSVPs, scan attendee QR codes, and review registration logs.</p>
+      </div>
+      <div>
+        <a href="create-event.html" class="btn-create-event" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Create Event
+        </a>
+      </div>
+    </div>
+    <!-- Top Metrics stats -->
+    <div class="admin-stats-row" style="margin-bottom: 0.5rem;">
+      <div class="admin-stat-box">
+        <span class="stat-num" id="admin-stat-total">0</span>
+        <span class="stat-label">Total Registered</span>
+      </div>
+      <div class="admin-stat-box">
+        <span class="stat-num" id="admin-stat-checked">0</span>
+        <span class="stat-label">Checked In</span>
+      </div>
+      <div class="admin-stat-box">
+        <span class="stat-num" id="admin-stat-pending">0</span>
+        <span class="stat-label">Pending Check-in</span>
+      </div>
+      <div class="admin-stat-box">
+        <span class="stat-num" id="admin-stat-revenue">₹0.00</span>
+        <span class="stat-label">Revenue</span>
+      </div>
+      <div class="admin-stat-box">
+        <span class="stat-num" id="admin-stat-attendance-rate">0%</span>
+        <span class="stat-label">Attendance Rate</span>
+      </div>
+    </div>
+    
+    <!-- Live check-in success/error banners -->
+    <div class="admin-scan-result-banner hidden" id="admin-scan-success-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="banner-success-svg">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>
+      <span id="admin-scan-success-text">Check-in successful!</span>
+    </div>
+    
+    <div class="admin-scan-result-banner error hidden" id="admin-scan-error-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="banner-error-svg">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <span id="admin-scan-error-text">Check-in failed!</span>
+    </div>
+
+    <!-- Grid: Scanner vs. Log Search -->
+    <div class="admin-grid-layout">
+      
+      <!-- Left Column: Scanner & Announcements -->
+      <div id="admin-left-col" style="display: flex; flex-direction: column; gap: 2rem;">
+        
+        <!-- Left: Real Scanner Viewport -->
+        <div class="admin-panel-box">
+          <h3 class="admin-panel-title">QR Scanner</h3>
+          
+          <div id="qr-reader" style="width: 100%; border-radius: 0.5rem; overflow: hidden; margin-bottom: 1rem;"></div>
+          <div id="qr-reader-results" style="display: none;"></div>
+
+          <div class="admin-manual-checkin">
+            <span class="admin-label-small">MANUAL TICKET CHECK-IN</span>
+            <div class="manual-checkin-row">
+              <input type="text" id="manual-ticket-id-input" class="promo-textbox" placeholder="Enter Ticket ID (e.g. PRNT-EBC28-...)" aria-label="Manual Ticket check-in input">
+              <button type="button" class="btn btn-primary btn-sm" id="btn-admin-manual-checkin">Verify</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Left: Announcements Box -->
+        <div class="admin-panel-box">
+          <h3 class="admin-panel-title">Send Announcement</h3>
+          <p class="panel-section-subtitle" style="margin-bottom: 0.75rem;">Post an announcement that will be displayed live on the Attendee Tickets Hub.</p>
+          <div class="form-group" style="margin-bottom: 0.75rem;">
+            <textarea id="announcement-textarea" class="form-control" placeholder="Write announcement here... (e.g. Meetup starts in 10 mins!)" style="width: 100%; min-height: 80px; font-family: inherit; font-size: 0.85rem; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border-input); resize: vertical;"></textarea>
+          </div>
+          <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-send-announcement">
+            Broadcast Announcement
+          </button>
+        </div>
+
+        <!-- Left: Form Builder Box -->
+        <div class="admin-panel-box">
+          <h3 class="admin-panel-title">Custom Registration Form</h3>
+          <p class="panel-section-subtitle" style="margin-bottom: 0.75rem;">Configure the questions asked to attendees when they register.</p>
+          
+          <div id="form-builder-questions-list" style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem;">
+            <!-- Rendered questions will appear here -->
+          </div>
+
+          <div style="background: var(--bg-info-card); border: 1px solid var(--border-input); border-radius: 0.5rem; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+            <h4 style="font-size: 0.9rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.25rem;">Add New Question</h4>
+            <div class="form-group">
+              <label class="form-label" style="font-size: 0.8rem;">Question Label</label>
+              <input type="text" id="fb-new-label" class="form-control" placeholder="e.g. What is your role?" style="font-size: 0.85rem;">
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label" style="font-size: 0.8rem;">Type</label>
+              <select id="fb-new-type" class="form-control" style="font-size: 0.85rem;">
+                <option value="text">Short Text</option>
+                <option value="textarea">Long Text</option>
+                <option value="radio">Multiple Choice (Radio)</option>
+                <option value="select">Dropdown</option>
+                <option value="toggle">Yes/No Toggle</option>
+              </select>
+            </div>
+            
+            <div class="form-group" id="fb-new-options-group" style="display: none;">
+              <label class="form-label" style="font-size: 0.8rem;">Options (comma separated)</label>
+              <input type="text" id="fb-new-options" class="form-control" placeholder="e.g. Founder, Student, Investor" style="font-size: 0.85rem;">
+            </div>
+
+            <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+              <input type="checkbox" id="fb-new-required" style="width: 1rem; height: 1rem; cursor: pointer;">
+              <label for="fb-new-required" class="form-label" style="margin: 0; font-size: 0.8rem; cursor: pointer;">Required Question</label>
+            </div>
+
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-fb-add-question" style="margin-top: 0.5rem;">+ Add Question</button>
+          </div>
+
+          <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-fb-save-form" style="margin-top: 0.5rem;">
+            Save Form Configuration
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Right: Searchable Registrations Table -->
+      <div class="admin-panel-box" id="admin-rsvp-box">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--divider); padding-bottom: 0.75rem; margin-bottom: 0.25rem; flex-wrap: wrap; gap: 0.75rem;">
+          <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin: 0; font-family: 'Outfit', sans-serif;">RSVP & Registration Search</h3>
+          
+          <!-- View Segment Tabs -->
+          <div class="view-tabs" style="display: flex; gap: 0.25rem; background: var(--bg-info-card); padding: 0.25rem; border-radius: 0.5rem; border: 1px solid var(--border-card); margin-left: auto;">
+            <button type="button" id="tab-all-registrations" style="font-size: 0.75rem; padding: 0.35rem 0.75rem; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer; transition: all 0.2s; background: var(--brand-primary); color: #ffffff; font-family: inherit;">All Registrations</button>
+            <button type="button" id="tab-post-event-attendees" style="font-size: 0.75rem; padding: 0.35rem 0.75rem; border: none; border-radius: 0.375rem; font-weight: 600; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--text-secondary); font-family: inherit;">Post-Event Attendees (Checked-In)</button>
+          </div>
+        </div>
+        
+        <div class="search-filter-row" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <input type="text" id="attendee-search-input" class="form-control" placeholder="Search by email or Ticket ID..." style="flex: 1; min-width: 180px;">
+          
+          <select id="filter-status-select" class="form-control" style="width: 130px; cursor: pointer; padding: 0.25rem 0.5rem;">
+            <option value="all">All Statuses</option>
+            <option value="unused">Unused</option>
+            <option value="checked-in">Checked In</option>
+          </select>
+          
+          <select id="filter-approval-select" class="form-control" style="width: 140px; cursor: pointer; padding: 0.25rem 0.5rem;">
+            <option value="all">All Approvals</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-export-csv" style="padding: 0.5rem 0.75rem; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem; border-radius: 0.375rem; cursor: pointer; background-color: var(--bg-info-card); border: 1px solid var(--border-card); color: var(--text-main);" title="Export registrations matching current search, status, and approval filters">
+            📥 Export Filtered CSV
+          </button>
+          
+          <button type="button" class="btn btn-primary btn-sm" id="btn-export-attendees-csv" style="padding: 0.5rem 0.75rem; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem; border-radius: 0.375rem; cursor: pointer; background-color: var(--brand-primary); border: 1px solid var(--brand-primary); color: #ffffff;" title="Export only checked-in attendees who attended the meetup post-event">
+            📥 Export Checked-In
+          </button>
+        </div>
+
+        <div class="checked-in-list-container" style="flex: 1; min-height: 0; overflow: auto;">
+          <table class="attendees-table">
+            <thead>
+              <tr>
+                <th style="padding: 0.75rem 1rem;">Email</th>
+                <th style="padding: 0.75rem 1rem;">Ticket ID</th>
+                <th style="padding: 0.75rem 1rem;">Status</th>
+                <th style="padding: 0.75rem 1rem;">Approval</th>
+                <th style="padding: 0.75rem 1rem;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="attendees-list-body">
+              <!-- Attendee listings will insert here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script type="module">
+    import { auth, db } from './firebase-config.js';
+    import { collection, doc, getDocs, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Session boundary check
+      let session = null;
+      try {
+        session = JSON.parse(localStorage.getItem('currentUser'));
+      } catch (e) {
+        console.error("Error parsing session:", e);
+        try {
+          localStorage.removeItem('currentUser');
+        } catch (_) {}
+      }
+      if (!session || session.role !== 'admin') {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      // Populate header email
+      document.getElementById('header-admin-email').textContent = session.email;
+
+      const adminStatTotal = document.getElementById('admin-stat-total');
+      const adminStatChecked = document.getElementById('admin-stat-checked');
+      const adminStatPending = document.getElementById('admin-stat-pending');
+      const adminStatRevenue = document.getElementById('admin-stat-revenue');
+      const adminStatAttendanceRate = document.getElementById('admin-stat-attendance-rate');
+
+      const adminSuccessBanner = document.getElementById('admin-scan-success-banner');
+      const adminSuccessText = document.getElementById('admin-scan-success-text');
+      const adminErrorBanner = document.getElementById('admin-scan-error-banner');
+      const adminErrorText = document.getElementById('admin-scan-error-text');
+
+      const manualCheckinBtn = document.getElementById('btn-admin-manual-checkin');
+      const manualTicketInput = document.getElementById('manual-ticket-id-input');
+      const attendeeSearchInput = document.getElementById('attendee-search-input');
+      
+      const attendeesListBody = document.getElementById('attendees-list-body');
+
+      let searchFilter = '';
+      let cachedTickets = [];
+
+      async function updateDashboard() {
+        let tickets = [];
+        try {
+          const querySnapshot = await getDocs(collection(db, 'tickets'));
+          querySnapshot.forEach((docSnap) => {
+            tickets.push(docSnap.data());
+          });
+        } catch(e) { console.error(e); }
+        cachedTickets = tickets;
+        
+        // Calculate counts
+        const total = tickets.length;
+        const checked = tickets.filter(t => t.status === 'checked-in').length;
+        const pending = total - checked;
+
+        // Calculate Revenue and Attendance Rate
+        const ticketPrice = 399; // Ticket price is ₹399
+        const revenue = total * ticketPrice;
+        const attendanceRate = total > 0 ? ((checked / total) * 100).toFixed(1) : '0';
+
+        adminStatTotal.textContent = total;
+        adminStatChecked.textContent = checked;
+        adminStatPending.textContent = pending;
+        if (adminStatRevenue) adminStatRevenue.textContent = `₹${revenue.toFixed(2)}`;
+        if (adminStatAttendanceRate) adminStatAttendanceRate.textContent = `${attendanceRate}%`;
+
+        // Render attendees table matching search filter and other filters
+        attendeesListBody.innerHTML = '';
+
+        const statusFilter = document.getElementById('filter-status-select').value;
+        const approvalFilter = document.getElementById('filter-approval-select').value;
+
+        const filteredTickets = tickets.filter(t => {
+          const query = searchFilter.toLowerCase();
+          const matchesSearch = t.email.toLowerCase().includes(query) || t.id.toLowerCase().includes(query);
+          
+          const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
+          
+          const approval = t.approval || 'approved';
+          const matchesApproval = approvalFilter === 'all' || approval === approvalFilter;
+          
+          return matchesSearch && matchesStatus && matchesApproval;
+        });
+
+        if (filteredTickets.length === 0) {
+          attendeesListBody.innerHTML = `
+            <tr class="empty-list-row">
+              <td colspan="5" style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 2rem 0;">No registrations match your filters.</td>
+            </tr>
+          `;
+          return;
+        }
+
+        filteredTickets.forEach(t => {
+          const row = document.createElement('tr');
+          const isChecked = t.status === 'checked-in';
+          const approval = t.approval || 'approved';
+          
+          const statusBadge = `<span class="badge-status ${isChecked ? 'checked-in' : 'unused'}" style="white-space: nowrap;">${isChecked ? 'Checked In' : 'Unused'}</span>`;
+          
+          let approvalBadgeStyle = '';
+          if (approval === 'approved') {
+            approvalBadgeStyle = 'background-color: rgba(16, 185, 129, 0.1); color: #059669; border: 1px solid rgba(16, 185, 129, 0.2);';
+          } else if (approval === 'rejected') {
+            approvalBadgeStyle = 'background-color: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.2);';
+          } else {
+            approvalBadgeStyle = 'background-color: rgba(245, 158, 11, 0.1); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.2);';
+          }
+          const approvalBadge = `<span class="badge-status" style="white-space: nowrap; ${approvalBadgeStyle}">${approval.toUpperCase()}</span>`;
+          
+          // Action buttons
+          let actionCellHtml = `<div style="display: flex; gap: 0.5rem; align-items: center; white-space: nowrap;">`;
+          if (approval === 'pending') {
+            actionCellHtml += `
+              <button type="button" class="btn-action-checkin" style="background-color: #10b981;" onclick="triggerApproveAttendee('${t.id}')">Approve</button>
+              <button type="button" class="btn-action-checkin" style="background-color: transparent; border: 1px solid #ef4444; color: #ef4444;" onclick="triggerRejectAttendee('${t.id}')">Reject</button>
+            `;
+          } else if (approval === 'approved' && !isChecked) {
+            actionCellHtml += `
+              <button type="button" class="btn-action-checkin" style="background-color: var(--brand-primary);" onclick="triggerManualCheckinFromTable('${t.id}')">Check In</button>
+              <button type="button" class="btn-action-checkin" style="background-color: transparent; border: 1px solid #ef4444; color: #ef4444;" onclick="triggerRejectAttendee('${t.id}')">Reject</button>
+            `;
+          } else if (approval === 'approved' && isChecked) {
+            const timeStr = t.timestamp.split(',')[1] || t.timestamp;
+            actionCellHtml += `
+              <span style="color: var(--text-muted); font-size: 0.75rem; font-weight: 500; margin-right: 0.25rem;">Checked-in ${timeStr}</span>
+              <button type="button" class="btn-action-checkin" style="background-color: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 0.15rem 0.4rem; font-size: 0.65rem;" onclick="triggerRejectAttendee('${t.id}')">Reject</button>
+            `;
+          } else if (approval === 'rejected') {
+            actionCellHtml += `
+              <button type="button" class="btn-action-checkin" style="background-color: #10b981;" onclick="triggerApproveAttendee('${t.id}')">Approve</button>
+            `;
+          }
+          actionCellHtml += `</div>`;
+          
+          row.innerHTML = `
+            <td style="padding: 0.75rem 1rem; white-space: nowrap;"><a href="#" onclick="showAttendeeDetails('${t.id}'); return false;" style="color: var(--brand-primary); font-weight: 600; text-decoration: none; border-bottom: 1px dashed var(--brand-primary);">${t.email}</a></td>
+            <td style="padding: 0.75rem 1rem; white-space: nowrap;"><span class="monospaced-code" style="font-size:0.75rem;">${t.id}</span></td>
+            <td style="padding: 0.75rem 1rem; white-space: nowrap;">${statusBadge}</td>
+            <td style="padding: 0.75rem 1rem; white-space: nowrap;">${approvalBadge}</td>
+            <td style="padding: 0.75rem 1rem; white-space: nowrap;">${actionCellHtml}</td>
+          `;
+          attendeesListBody.appendChild(row);
+        });
+      }
+
+      // Global functions bound to window so onclick works
+      window.triggerManualCheckinFromTable = function(tId) {
+        processCheckIn(tId);
+      };
+
+      window.triggerApproveAttendee = function(tId) {
+        updateAttendeeApproval(tId, 'approved');
+      };
+
+      window.triggerRejectAttendee = function(tId) {
+        updateAttendeeApproval(tId, 'rejected');
+      };
+
+      async function updateAttendeeApproval(tId, newStatus) {
+        try {
+          const ticketRef = doc(db, 'tickets', tId);
+          const ticketSnap = await getDoc(ticketRef);
+          if (ticketSnap.exists()) {
+            const updateData = { approval: newStatus };
+            if (newStatus === 'rejected') {
+              updateData.status = 'unused';
+            }
+            await updateDoc(ticketRef, updateData);
+            showCheckinSuccess(`Attendee has been ${newStatus}!`);
+            updateDashboard();
+          }
+        } catch(e) { console.error(e); }
+      }
+
+      async function processCheckIn(tId) {
+        adminSuccessBanner.classList.add('hidden');
+        adminErrorBanner.classList.add('hidden');
+
+        const cleanId = tId.trim().toUpperCase();
+        if (cleanId.length === 0) {
+          showCheckinError("Error: Please enter a Ticket ID!");
+          return;
+        }
+
+        try {
+          const ticketRef = doc(db, 'tickets', cleanId);
+          const ticketSnap = await getDoc(ticketRef);
+          
+          if (!ticketSnap.exists()) {
+            showCheckinError(`Error: Invalid Ticket ID "${cleanId}"!`);
+            return;
+          }
+
+          const ticket = ticketSnap.data();
+          if (ticket.status === 'checked-in') {
+            showCheckinError(`Warning: Ticket ${cleanId} is already checked in!`);
+            return;
+          }
+
+          const approval = ticket.approval || 'approved';
+          if (approval !== 'approved') {
+            showCheckinError(`Error: Cannot check-in ticket ${cleanId} because it is ${approval.toUpperCase()}!`);
+            return;
+          }
+
+          // Check in ticket
+          await updateDoc(ticketRef, {
+            status: 'checked-in',
+            timestamp: new Date().toLocaleString()
+          });
+
+          showCheckinSuccess(`Check-in successful: Ticket ${cleanId} (${ticket.email})!`);
+          updateDashboard();
+        } catch(e) { console.error(e); }
+      }
+
+      function showCheckinSuccess(msg) {
+        adminSuccessText.textContent = msg;
+        adminSuccessBanner.classList.remove('hidden');
+        setTimeout(() => {
+          adminSuccessBanner.classList.add('hidden');
+        }, 5000);
+      }
+
+      function showCheckinError(msg) {
+        adminErrorText.textContent = msg;
+        adminErrorBanner.classList.remove('hidden');
+        setTimeout(() => {
+          adminErrorBanner.classList.add('hidden');
+        }, 5000);
+      }
+
+      // Initialize Html5QrcodeScanner
+      let html5QrcodeScanner;
+      let lastScannedId = null;
+      let lastScanTime = 0;
+      try {
+        function onScanSuccess(decodedText, decodedResult) {
+          const now = Date.now();
+          // Debounce: prevent duplicate scans within 3 seconds
+          if (decodedText !== lastScannedId || (now - lastScanTime) > 3000) {
+            lastScannedId = decodedText;
+            lastScanTime = now;
+            processCheckIn(decodedText);
+          }
+        }
+
+        function onScanFailure(error) {
+          // handle scan failure, usually better to ignore and keep scanning
+        }
+
+        html5QrcodeScanner = new Html5QrcodeScanner(
+          "qr-reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
+        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+      } catch (e) {
+        console.error("QR Scanner initialization failed", e);
+      }
+
+      // Manual ticket submit
+      manualCheckinBtn.addEventListener('click', () => {
+        const tId = manualTicketInput.value;
+        processCheckIn(tId);
+        manualTicketInput.value = '';
+      });
+
+      // Search and Filter inputs
+      attendeeSearchInput.addEventListener('input', (e) => {
+        searchFilter = e.target.value;
+        updateDashboard();
+      });
+
+      document.getElementById('filter-status-select').addEventListener('change', updateDashboard);
+      document.getElementById('filter-approval-select').addEventListener('change', updateDashboard);
+
+      // View segment tabs styling & listeners
+      const tabAll = document.getElementById('tab-all-registrations');
+      const tabPostEvent = document.getElementById('tab-post-event-attendees');
+      const filterStatusSelect = document.getElementById('filter-status-select');
+
+      function setActiveTab(tab) {
+        if (!tabAll || !tabPostEvent) return;
+        if (tab === 'all') {
+          tabAll.style.background = 'var(--brand-primary)';
+          tabAll.style.color = '#ffffff';
+          tabPostEvent.style.background = 'transparent';
+          tabPostEvent.style.color = 'var(--text-secondary)';
+        } else if (tab === 'checked-in') {
+          tabPostEvent.style.background = 'var(--brand-primary)';
+          tabPostEvent.style.color = '#ffffff';
+          tabAll.style.background = 'transparent';
+          tabAll.style.color = 'var(--text-secondary)';
+        }
+      }
+
+      if (tabAll && tabPostEvent && filterStatusSelect) {
+        tabAll.addEventListener('click', () => {
+          filterStatusSelect.value = 'all';
+          setActiveTab('all');
+          updateDashboard();
+        });
+
+        tabPostEvent.addEventListener('click', () => {
+          filterStatusSelect.value = 'checked-in';
+          setActiveTab('checked-in');
+          updateDashboard();
+        });
+
+        filterStatusSelect.addEventListener('change', (e) => {
+          if (e.target.value === 'checked-in') {
+            setActiveTab('checked-in');
+          } else {
+            setActiveTab('all');
+          }
+        });
+      }
+
+      // Helper function to export any array of tickets to CSV
+      function exportTicketsToCsv(ticketsToExport, filename) {
+        if (ticketsToExport.length === 0) {
+          showCheckinError("Error: No registrations match the export criteria!");
+          return;
+        }
+
+        // Extract all unique question labels from all tickets
+        const allQuestionLabels = new Set();
+        ticketsToExport.forEach(t => {
+          if (t.answers) {
+            Object.keys(t.answers).forEach(label => {
+              allQuestionLabels.add(label);
+            });
+          }
+        });
+        const labelsArray = Array.from(allQuestionLabels);
+
+        // Build CSV content
+        let csvContent = "\ufeff"; // BOM for Excel UTF-8 support
+        
+        // Headers
+        csvContent += "Email,Ticket ID,Ticket Status,Approval Status,Payment,Timestamp";
+        labelsArray.forEach(label => {
+          const escapedLabel = label.replace(/"/g, '""');
+          csvContent += `,"${escapedLabel}"`;
+        });
+        csvContent += "\n";
+
+        // Rows
+        ticketsToExport.forEach(t => {
+          const email = t.email;
+          const id = t.id;
+          const status = t.status;
+          const approval = t.approval || 'approved';
+          const payment = t.payment || 'offline';
+          const timestamp = (t.timestamp || '').replace(/"/g, '""');
+
+          let rowStr = `"${email}","${id}","${status}","${approval}","${payment}","${timestamp}"`;
+          
+          labelsArray.forEach(label => {
+            const answer = (t.answers && t.answers[label] !== undefined) ? String(t.answers[label]) : '';
+            const escapedAnswer = answer.replace(/"/g, '""');
+            rowStr += `,"${escapedAnswer}"`;
+          });
+          
+          csvContent += rowStr + "\n";
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+
+      // Export CSV click listeners
+      const exportCsvBtn = document.getElementById('btn-export-csv');
+      if (exportCsvBtn) {
+        exportCsvBtn.addEventListener('click', () => {
+          const tickets = cachedTickets;
+          const statusFilter = document.getElementById('filter-status-select').value;
+          const approvalFilter = document.getElementById('filter-approval-select').value;
+          const query = searchFilter.toLowerCase();
+
+          const filteredTickets = tickets.filter(t => {
+            const matchesSearch = t.email.toLowerCase().includes(query) || t.id.toLowerCase().includes(query);
+            const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
+            const approval = t.approval || 'approved';
+            const matchesApproval = approvalFilter === 'all' || approval === approvalFilter;
+            return matchesSearch && matchesStatus && matchesApproval;
+          });
+
+          exportTicketsToCsv(filteredTickets, 'ebc_registrations_filtered.csv');
+          showCheckinSuccess("Filtered attendee list CSV downloaded successfully!");
+        });
+      }
+
+      const exportAttendeesCsvBtn = document.getElementById('btn-export-attendees-csv');
+      if (exportAttendeesCsvBtn) {
+        exportAttendeesCsvBtn.addEventListener('click', () => {
+          const tickets = cachedTickets;
+          const checkedInTickets = tickets.filter(t => t.status === 'checked-in');
+          
+          if (checkedInTickets.length === 0) {
+            showCheckinError("Error: No checked-in attendees available to export!");
+            return;
+          }
+
+          exportTicketsToCsv(checkedInTickets, 'ebc_post_event_attendees.csv');
+          showCheckinSuccess("Post-event attendee list CSV downloaded successfully!");
+        });
+      }
+
+      // Announcement send click listener
+      const sendAnnouncementBtn = document.getElementById('btn-send-announcement');
+      const announcementTextarea = document.getElementById('announcement-textarea');
+      if (sendAnnouncementBtn && announcementTextarea) {
+        sendAnnouncementBtn.addEventListener('click', () => {
+          const text = announcementTextarea.value.trim();
+          if (text.length === 0) {
+            showCheckinError("Error: Announcement text cannot be empty!");
+            return;
+          }
+          localStorage.setItem('latestAnnouncement', text);
+          announcementTextarea.value = '';
+          showCheckinSuccess("Announcement broadcasted successfully to all attendees!");
+        });
+      }
+
+      // Logout trigger
+      document.getElementById('btn-admin-logout').addEventListener('click', () => {
+        localStorage.removeItem('currentUser');
+        window.location.href = 'index.html';
+      });
+
+      // =========================================================
+      // Form Builder Logic
+      // =========================================================
+      const defaultFormConfig = [
+        { id: 'q-building', type: 'text', label: 'What are you building?', required: true },
+        { id: 'q-about', type: 'textarea', label: 'Tell us about yourself', required: true },
+        { id: 'q-role', type: 'radio', label: 'Role', required: true, options: 'Founder,Student,Investor,Professional' },
+        { id: 'q-industry', type: 'select', label: 'Industry', required: true, options: 'Technology,Finance,Healthcare,Education,Other' },
+        { id: 'q-linkedin', type: 'text', label: 'LinkedIn URL (Optional)', required: false },
+        { id: 'q-instagram', type: 'text', label: 'Instagram URL (Optional)', required: false },
+        { id: 'q-website', type: 'text', label: 'Personal Website (Optional)', required: false },
+        { id: 'q-cofounder', type: 'toggle', label: 'Looking for Co-founder?', required: false }
+      ];
+
+      let formConfig = JSON.parse(localStorage.getItem('customRegistrationForm'));
+      if (!formConfig || formConfig.length === 0) {
+        formConfig = defaultFormConfig;
+      }
+
+      const fbQuestionsList = document.getElementById('form-builder-questions-list');
+      const fbTypeSelect = document.getElementById('fb-new-type');
+      const fbOptionsGroup = document.getElementById('fb-new-options-group');
+      const btnFbAdd = document.getElementById('btn-fb-add-question');
+      const btnFbSave = document.getElementById('btn-fb-save-form');
+
+      // Toggle options input visibility
+      fbTypeSelect.addEventListener('change', (e) => {
+        if (e.target.value === 'radio' || e.target.value === 'select') {
+          fbOptionsGroup.style.display = 'block';
+        } else {
+          fbOptionsGroup.style.display = 'none';
+        }
+      });
+
+      function renderFormBuilderList() {
+        if (!fbQuestionsList) return;
+        fbQuestionsList.innerHTML = '';
+        formConfig.forEach((q, index) => {
+          const item = document.createElement('div');
+          item.style.cssText = 'background: #fff; border: 1px solid var(--border-card); border-radius: 0.375rem; padding: 0.75rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05);';
+          
+          let details = `<div style="font-size: 0.85rem;"><strong style="color: var(--text-main);">${q.label}</strong> <span style="color: var(--text-muted); font-size: 0.75rem;">(${q.type})</span>`;
+          if (q.required) {
+            details += ` <span style="color: #ef4444; font-size: 0.75rem; font-weight: 600;">*Required</span>`;
+          }
+          if (q.options) {
+            details += `<br><span style="color: var(--text-secondary); font-size: 0.75rem;">Options: ${q.options}</span>`;
+          }
+          details += `</div>`;
+
+          const actions = `
+            <button type="button" class="btn btn-secondary btn-sm btn-fb-delete" data-index="${index}" style="padding: 0.2rem 0.5rem; font-size: 0.7rem; color: #ef4444; border-color: #fca5a5; background: #fef2f2;">Delete</button>
+          `;
+
+          item.innerHTML = details + actions;
+          fbQuestionsList.appendChild(item);
+        });
+
+        // Attach delete handlers
+        document.querySelectorAll('.btn-fb-delete').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const idx = parseInt(e.target.getAttribute('data-index'), 10);
+            formConfig.splice(idx, 1);
+            renderFormBuilderList();
+          });
+        });
+      }
+
+      renderFormBuilderList();
+
+      btnFbAdd.addEventListener('click', () => {
+        const labelInput = document.getElementById('fb-new-label');
+        const typeInput = document.getElementById('fb-new-type');
+        const optionsInput = document.getElementById('fb-new-options');
+        const requiredInput = document.getElementById('fb-new-required');
+
+        const label = labelInput.value.trim();
+        const type = typeInput.value;
+        const options = optionsInput.value.trim();
+        const required = requiredInput.checked;
+
+        if (!label) {
+          showCheckinError("Question Label is required!");
+          return;
+        }
+        if ((type === 'radio' || type === 'select') && !options) {
+          showCheckinError("Options are required for Multiple Choice or Dropdown!");
+          return;
+        }
+
+        const id = 'q-custom-' + Date.now();
+        formConfig.push({ id, type, label, options, required });
+
+        // reset
+        labelInput.value = '';
+        typeInput.value = 'text';
+        optionsInput.value = '';
+        requiredInput.checked = false;
+        fbOptionsGroup.style.display = 'none';
+
+        renderFormBuilderList();
+      });
+
+      btnFbSave.addEventListener('click', () => {
+        localStorage.setItem('customRegistrationForm', JSON.stringify(formConfig));
+        showCheckinSuccess("Form configuration saved successfully!");
+      });
+      // =========================================================
+
+      // Attendee Details Modal Controls
+      const attendeeDetailsModal = document.getElementById('attendee-details-modal');
+      const closeDetailsModalBtn = document.getElementById('btn-close-details-modal');
+      const closeDetailsModalBottomBtn = document.getElementById('btn-close-details-modal-bottom');
+      const attendeeDetailsContent = document.getElementById('attendee-details-content');
+
+      window.showAttendeeDetails = function(tId) {
+        const tickets = JSON.parse(localStorage.getItem('tickets')) || [];
+        const ticket = tickets.find(t => t.id === tId);
+        if (!ticket) return;
+
+        let answersHtml = '';
+        if (ticket.answers && Object.keys(ticket.answers).length > 0) {
+          answersHtml = '<div style="margin-top: 1rem; border-top: 1px solid var(--divider); padding-top: 1rem;">';
+          answersHtml += '<h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text-main); font-family: \'Outfit\', sans-serif;">Attendee Registration Answers</h4>';
+          for (const [key, value] of Object.entries(ticket.answers)) {
+            answersHtml += `
+              <div style="margin-bottom: 0.75rem; background: var(--bg-info-card); padding: 0.6rem 0.75rem; border-radius: 0.375rem; border: 1px solid var(--border-card);">
+                <p style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.15rem; text-transform: uppercase; letter-spacing: 0.02em;">${key}</p>
+                <p style="font-size: 0.85rem; color: var(--text-main); font-weight: 500; word-break: break-word; white-space: pre-wrap; margin: 0;">${value || 'No answer provided.'}</p>
+              </div>
+            `;
+          }
+          answersHtml += '</div>';
+        } else {
+          answersHtml = `
+            <div style="margin-top: 1.25rem; border-top: 1px solid var(--divider); padding-top: 1.25rem; text-align: center; color: var(--text-muted); font-size: 0.82rem; font-style: italic;">
+              No custom question responses available for this attendee.
+            </div>
+          `;
+        }
+
+        const detailsHtml = `
+          <div style="display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.85rem; background: var(--bg-info-card); border: 1px solid var(--divider); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+            <p style="margin: 0;"><strong>Email:</strong> ${ticket.email}</p>
+            <p style="margin: 0;"><strong>Ticket ID:</strong> <span class="monospaced-code" style="font-size: 0.75rem; font-weight: 700; color: var(--brand-primary);">${ticket.id}</span></p>
+            <p style="margin: 0; display: flex; align-items: center; gap: 0.5rem;"><strong>Status:</strong> <span class="badge-status ${ticket.status === 'checked-in' ? 'checked-in' : 'unused'}" style="margin: 0;">${ticket.status === 'checked-in' ? 'Checked In' : 'Unused'}</span></p>
+            <p style="margin: 0; display: flex; align-items: center; gap: 0.5rem;"><strong>Approval:</strong> <span class="badge-status ${ticket.approval === 'rejected' ? '' : (ticket.approval === 'approved' ? 'checked-in' : 'unused')}" style="margin: 0; ${ticket.approval === 'rejected' ? 'background-color: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.2);' : ''}">${(ticket.approval || 'approved').toUpperCase()}</span></p>
+            <p style="margin: 0;"><strong>Payment Method:</strong> <span style="text-transform: capitalize;">${ticket.payment || 'offline'}</span></p>
+            <p style="margin: 0;"><strong>Booking Date:</strong> ${ticket.timestamp || '-'}</p>
+          </div>
+          ${answersHtml}
+        `;
+
+        attendeeDetailsContent.innerHTML = detailsHtml;
+        attendeeDetailsModal.classList.remove('hidden');
+      };
+
+      if (closeDetailsModalBtn) {
+        closeDetailsModalBtn.addEventListener('click', () => {
+          attendeeDetailsModal.classList.add('hidden');
+        });
+      }
+      if (closeDetailsModalBottomBtn) {
+        closeDetailsModalBottomBtn.addEventListener('click', () => {
+          attendeeDetailsModal.classList.add('hidden');
+        });
+      }
+
+      // Align RSVP Search table height to the left column dynamically
+      function alignRsvpHeight() {
+        const leftCol = document.getElementById('admin-left-col');
+        const rsvpBox = document.getElementById('admin-rsvp-box');
+        
+        if (leftCol && rsvpBox && window.innerWidth >= 992) {
+          rsvpBox.style.height = leftCol.offsetHeight + 'px';
+        } else if (rsvpBox) {
+          rsvpBox.style.height = 'auto';
+        }
+      }
+
+      // Run on layout events
+      window.addEventListener('resize', alignRsvpHeight);
+      window.addEventListener('load', alignRsvpHeight);
+      
+      // Observe size changes of left column (like form builder layout changes) to update right column height
+      if (typeof ResizeObserver !== 'undefined') {
+        const leftCol = document.getElementById('admin-left-col');
+        if (leftCol) {
+          const resizeObserver = new ResizeObserver(() => {
+            alignRsvpHeight();
+          });
+          resizeObserver.observe(leftCol);
+        }
+      }
+
+      // Initial loading
+      updateDashboard();
+      alignRsvpHeight();
+    });
+  </script>
+
+  <!-- Attendee Details Modal -->
+  <div class="modal-overlay hidden" id="attendee-details-modal">
+    <div class="modal-card" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 class="modal-title" style="font-family: 'Outfit', sans-serif;">Attendee Registration Details</h3>
+        <button class="modal-close-btn" id="btn-close-details-modal" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem; max-height: 80vh; overflow-y: auto;">
+        <div id="attendee-details-content">
+          <!-- Details content dynamically injected -->
+        </div>
+        
+        <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" id="btn-close-details-modal-bottom" style="padding: 0.5rem 1.5rem;">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

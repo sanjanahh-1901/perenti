@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Event | Perenti Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=18">
+  <style>
+    .dashboard-page-wrapper {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-primary);
+    }
+    .admin-main-content {
+      flex: 1;
+      max-width: 800px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .form-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .form-control {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border-input);
+      border-radius: 0.5rem;
+      background-color: var(--bg-input);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+    .form-control:focus {
+      border-color: var(--brand-primary);
+      box-shadow: 0 0 0 3px rgba(90, 154, 142, 0.15);
+    }
+    .form-control::placeholder {
+      color: #9ca3af;
+    }
+    .form-section-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 1rem;
+      padding: 2rem;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 1.5rem;
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+    .form-section-card:focus-within {
+      border-color: var(--brand-primary);
+      box-shadow: var(--shadow-md);
+    }
+    .form-section-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grid-2-col {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    @media (min-width: 600px) {
+      .grid-2-col {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .toggle-group {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: var(--bg-info-card);
+      border: 1px solid var(--border-input);
+      border-radius: 0.5rem;
+    }
+  </style>
+</head>
+<body class="dashboard-page-wrapper">
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="index.html" class="brand-link">
+        <span class="brand-name">perenti</span>
+      </a>
+      
+      <div class="header-actions" style="display: flex; align-items: center; gap: 0.75rem;">
+        <span class="session-email-text" id="header-admin-email" style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);"></span>
+        <a href="admin-dashboard.html" class="btn btn-secondary btn-sm">Back to Dashboard</a>
+        <button type="button" class="btn btn-outline btn-sm" id="btn-admin-logout">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="admin-main-content">
+    <div class="admin-header-row" style="margin-bottom: 1rem;">
+      <div class="admin-title-section">
+        <h1 style="font-size: 2rem; font-weight: 800; color: var(--text-main);">Create New Event</h1>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.25rem;">Set up a new event, manage details, date, venue, and capacity.</p>
+      </div>
+    </div>
+
+    <!-- Loading / Error / Success Banners -->
+    <div id="create-error-banner" class="auth-error-banner hidden" style="margin-bottom: 1rem; background-color: #fef2f2; border: 1px solid #ef4444; color: #991b1b; padding: 0.75rem 1rem; border-radius: 0.5rem; font-size: 0.8rem; font-weight: 600; display: none; align-items: center; gap: 0.5rem;">
+      <span id="create-error-text">An error occurred.</span>
+    </div>
+
+    <form id="create-event-form">
+      
+      <!-- Basic Information -->
+      <div class="form-section-card">
+        <h2 class="form-section-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--brand-primary);"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          Basic Information
+        </h2>
+        <div class="form-group">
+          <label for="evt-name" class="form-label">Event Name <span style="color: #ef4444;">*</span></label>
+          <input type="text" id="evt-name" class="form-control" required placeholder="e.g. Ebc 28th Meetup">
+        </div>
+        
+        <div class="form-group">
+          <label for="evt-desc" class="form-label">Event Description <span style="color: #ef4444;">*</span></label>
+          <textarea id="evt-desc" class="form-control" rows="4" required placeholder="Provide a brief description of what attendees can expect..."></textarea>
+        </div>
+
+        <div class="grid-2-col">
+          <div class="form-group">
+            <label for="evt-banner" class="form-label">Event Banner URL</label>
+            <input type="url" id="evt-banner" class="form-control" placeholder="https://example.com/image.jpg">
+          </div>
+          <div class="form-group">
+            <label for="evt-category" class="form-label">Event Category <span style="color: #ef4444;">*</span></label>
+            <select id="evt-category" class="form-control" required style="appearance: none; background-image: url('data:image/svg+xml;utf8,<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2364748b\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><polyline points=\'6 9 12 15 18 9\'></polyline></svg>'); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 1rem; padding-right: 2.5rem;">
+              <option value="" disabled selected>Select Category</option>
+              <option value="Startup">Startup</option>
+              <option value="Networking">Networking</option>
+              <option value="Workshop">Workshop</option>
+              <option value="Business">Business</option>
+              <option value="Technology">Technology</option>
+              <option value="Community">Community</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Date & Time -->
+      <div class="form-section-card">
+        <h2 class="form-section-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--brand-primary);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          Date & Time
+        </h2>
+        <div class="grid-2-col">
+          <div class="form-group">
+            <label for="evt-start" class="form-label">Start Date & Time <span style="color: #ef4444;">*</span></label>
+            <input type="datetime-local" id="evt-start" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="evt-end" class="form-label">End Date & Time <span style="color: #ef4444;">*</span></label>
+            <input type="datetime-local" id="evt-end" class="form-control" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="evt-deadline" class="form-label">Registration Deadline</label>
+          <input type="datetime-local" id="evt-deadline" class="form-control">
+        </div>
+      </div>
+
+      <!-- Venue -->
+      <div class="form-section-card">
+        <h2 class="form-section-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--brand-primary);"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+          Venue
+        </h2>
+        <div class="form-group">
+          <label for="evt-venue-name" class="form-label">Venue Name <span style="color: #ef4444;">*</span></label>
+          <input type="text" id="evt-venue-name" class="form-control" required placeholder="e.g. Birch Cafe">
+        </div>
+        <div class="form-group">
+          <label for="evt-address" class="form-label">Full Address <span style="color: #ef4444;">*</span></label>
+          <input type="text" id="evt-address" class="form-control" required placeholder="e.g. Vanasthalipuram, Hyderabad">
+        </div>
+        <div class="form-group">
+          <label for="evt-maps-link" class="form-label">Google Maps Link</label>
+          <input type="url" id="evt-maps-link" class="form-control" placeholder="https://maps.google.com/...">
+        </div>
+      </div>
+
+      <!-- Capacity -->
+      <div class="form-section-card">
+        <h2 class="form-section-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--brand-primary);"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          Capacity
+        </h2>
+        <div class="grid-2-col">
+          <div class="form-group">
+            <label for="evt-capacity" class="form-label">Maximum Attendees <span style="color: #ef4444;">*</span></label>
+            <input type="number" id="evt-capacity" class="form-control" required min="1" placeholder="e.g. 100">
+          </div>
+          <div class="form-group toggle-group" style="margin-top: 1.5rem;">
+            <label for="evt-waitlist" class="form-label" style="margin-bottom: 0;">Enable Waitlist?</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="evt-waitlist">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <a href="admin-dashboard.html" class="btn btn-outline btn-lg">Cancel</a>
+        <button type="submit" class="btn btn-primary btn-lg" id="btn-submit-event" style="min-width: 150px;">Create Event</button>
+      </div>
+
+    </form>
+  </main>
+
+  <script type="module">
+    import { auth, db } from './firebase-config.js';
+    import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Auth / Admin Check
+      const sessionStr = localStorage.getItem('currentUser');
+      let session = null;
+      try {
+        if (sessionStr) session = JSON.parse(sessionStr);
+      } catch(e) {}
+
+      if (!session || session.role !== 'admin') {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      // Display admin email
+      const headerEmail = document.getElementById('header-admin-email');
+      if (headerEmail) {
+        headerEmail.textContent = session.email;
+      }
+
+      // Logout
+      const btnLogout = document.getElementById('btn-admin-logout');
+      if (btnLogout) {
+        btnLogout.addEventListener('click', () => {
+          localStorage.removeItem('currentUser');
+          window.location.href = 'login.html';
+        });
+      }
+
+      // 2. Form Submission
+      const form = document.getElementById('create-event-form');
+      const submitBtn = document.getElementById('btn-submit-event');
+      const errorBanner = document.getElementById('create-error-banner');
+      const errorText = document.getElementById('create-error-text');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Hide error
+        errorBanner.style.display = 'none';
+        
+        // Disable button
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Creating...";
+
+        try {
+          const eventData = {
+            name: document.getElementById('evt-name').value.trim(),
+            description: document.getElementById('evt-desc').value.trim(),
+            bannerUrl: document.getElementById('evt-banner').value.trim(),
+            category: document.getElementById('evt-category').value,
+            startDate: document.getElementById('evt-start').value,
+            endDate: document.getElementById('evt-end').value,
+            registrationDeadline: document.getElementById('evt-deadline').value,
+            venue: {
+              name: document.getElementById('evt-venue-name').value.trim(),
+              address: document.getElementById('evt-address').value.trim(),
+              mapsLink: document.getElementById('evt-maps-link').value.trim(),
+            },
+            capacity: {
+              maxAttendees: parseInt(document.getElementById('evt-capacity').value, 10),
+              waitlistEnabled: document.getElementById('evt-waitlist').checked
+            },
+            createdBy: session.email,
+            createdAt: serverTimestamp(),
+            status: 'active'
+          };
+
+          // Save to Firestore
+          const eventsRef = collection(db, 'events');
+          const docRef = await addDoc(eventsRef, eventData);
+          
+          // Show success and redirect
+          submitBtn.textContent = "Success!";
+          submitBtn.style.backgroundColor = "#10b981";
+          submitBtn.style.borderColor = "#10b981";
+          
+          setTimeout(() => {
+            window.location.href = 'admin-dashboard.html';
+          }, 1000);
+
+        } catch (error) {
+          console.error("Error creating event:", error);
+          errorText.textContent = "Failed to create event. " + error.message;
+          errorBanner.style.display = 'flex';
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Create Event";
+        }
+      });
+    });
+  </script>
+</body>
+</html>

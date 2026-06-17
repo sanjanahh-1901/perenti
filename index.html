@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ebc 28th Meetup | Perenti</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Register for the Ebc 28th Meetup on Perenti. Join founders, builders, and developers at Birch Cafe Vanasthalipuram, Hyderabad. Premium event experiences.">
+  <meta name="author" content="Perenti">
+  <meta name="robots" content="index, follow">
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="Ebc 28th Meetup | Perenti">
+  <meta property="og:description" content="Join the Ebc 28th Meetup at Birch Cafe Hyderabad. Turn RSVPs into real outcomes.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Perenti">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Styling -->
+  <link rel="stylesheet" href="styles.css?v=17">
+</head>
+<body>
+  
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="#" class="brand-link">
+        <span class="brand-name">perenti</span>
+      </a>
+      <span class="brand-tagline">Smart Events, Seamless Outcomes</span>
+      
+      <div class="header-actions" id="session-header-actions">
+        <!-- Guest state -->
+        <a href="login.html" class="btn btn-outline btn-sm" id="btn-header-login" style="margin-right: 0.5rem;">Login</a>
+        <a href="signup.html" class="btn btn-primary btn-sm" id="btn-header-signup">Sign Up</a>
+        
+        <!-- Logged-in User state (hidden) -->
+        <div class="header-session-info hidden" id="header-user-badge" style="display: none; align-items: center; gap: 0.75rem;">
+          <span class="session-email-text" id="header-email-display" style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);"></span>
+          <a href="user-dashboard.html" class="btn btn-secondary btn-sm">My Tickets</a>
+          <button type="button" class="btn btn-outline btn-sm" id="btn-header-logout">Logout</button>
+        </div>
+
+        <!-- Logged-in Admin state (hidden) -->
+        <div class="header-session-info hidden" id="header-admin-badge" style="display: none; align-items: center; gap: 0.75rem;">
+          <span class="session-email-text" id="header-admin-email-display" style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);"></span>
+          <a href="admin-dashboard.html" class="btn btn-primary btn-sm">Admin Panel</a>
+          <button type="button" class="btn btn-outline btn-sm" id="btn-header-logout-admin">Logout</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="page-main">
+    <div class="content-wrapper">
+      
+      <!-- Event Banner Section -->
+      <section class="event-banner-section">
+        <div class="banner-flex-container">
+          
+          <!-- Event Poster Column -->
+          <div class="banner-poster-col">
+            <img src="ebc_meetup_banner.jpg" alt="Ebc 28th Meetup Poster" class="event-poster-img">
+          </div>
+          
+          <!-- Event Core Info Column -->
+          <div class="banner-info-col">
+            <span class="banner-meta-tag">TICKETS</span>
+            <div class="event-title-container">
+              <h1 class="event-main-title">Ebc 28th Meetup</h1>
+              <div class="share-dropdown-wrapper">
+                <button type="button" class="btn-share-icon" id="btn-share-event" title="Share Event" aria-label="Share Event" aria-expanded="false">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="18" cy="5" r="3"></circle>
+                    <circle cx="6" cy="12" r="3"></circle>
+                    <circle cx="18" cy="19" r="3"></circle>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                  </svg>
+                </button>
+                <div class="share-dropdown-menu" id="share-menu">
+                  <button type="button" class="share-menu-item" data-action="copy" title="Copy Link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <span>Copy Link</span>
+                  </button>
+                  <button type="button" class="share-menu-item" data-action="whatsapp" title="Share on WhatsApp">
+                    <svg class="whatsapp-icon-svg" viewBox="0 0 24 24" fill="currentColor" style="width:1.1rem; height:1.1rem;">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.458 5.704 1.459h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    </svg>
+                    <span>WhatsApp</span>
+                  </button>
+                  <button type="button" class="share-menu-item" data-action="facebook" title="Share on Facebook">
+                    <svg class="facebook-icon-svg" viewBox="0 0 24 24" fill="currentColor" style="width:1.1rem; height:1.1rem;">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    </svg>
+                    <span>Facebook</span>
+                  </button>
+                  <button type="button" class="share-menu-item" data-action="twitter" title="Share on X (Twitter)">
+                    <svg class="twitter-icon-svg" viewBox="0 0 24 24" fill="currentColor" style="width:1.1rem; height:1.1rem;">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                    <span>X / Twitter</span>
+                  </button>
+                  <button type="button" class="share-menu-item" data-action="snapchat" title="Share on Snapchat">
+                    <svg class="snapchat-icon-svg" viewBox="0 0 24 24" fill="currentColor" style="width:1.1rem; height:1.1rem;">
+                      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.113 14.507c-.456.456-1.503.738-2.617.904-.265.04-.393.18-.328.397.07.234.331.782.355.836.082.185.062.336-.128.397-.145.047-.582-.016-1.047-.193-.418-.16-.628-.109-.817.151-.235.324-.543 1.026-.648 1.254-.085.185-.227.241-.397.162a.453.453 0 0 1-.065-.038 3.013 3.013 0 0 1-.225-.262c-.22-.303-.54-.666-.827-.666-.288 0-.608.363-.828.666a3.013 3.013 0 0 1-.225.262.453.453 0 0 1-.065.038c-.17.079-.312.023-.397-.162-.105-.228-.413-.93-.648-1.254-.189-.26-.399-.311-.817-.151-.465.177-.902.24-1.047.193-.19-.061-.21-.212-.128-.397.024-.054.285-.602.355-.836.065-.217-.063-.357-.328-.397-1.114-.166-2.161-.448-2.617-.904-.26-.26-.188-.679.172-.892.428-.253.94-.414 1.15-.558.261-.178.293-.404.148-.711-.274-.582-.727-2.072-.727-3.212 0-3.327 2.15-5.321 5.322-5.321s5.322 1.994 5.322 5.321c0 1.14-.453 2.63-.727 3.212-.145.307-.113.533.148.711.21.144.722.305 1.15.558.36.213.432.632.172.892z"/>
+                    </svg>
+                    <span>Snapchat</span>
+                  </button>
+                  <button type="button" class="share-menu-item" data-action="instagram" title="Share on Instagram">
+                    <svg class="instagram-icon-svg" viewBox="0 0 24 24" fill="currentColor" style="width:1.1rem; height:1.1rem;">
+                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+                    </svg>
+                    <span>Instagram</span>
+                  </button>
+                  <button type="button" class="share-menu-item" data-action="linkedin" title="Share on LinkedIn">
+                    <svg class="linkedin-icon-svg" viewBox="0 0 24 24" fill="currentColor" style="width:1.1rem; height:1.1rem;">
+                      <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+                    </svg>
+                    <span>LinkedIn</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <p class="event-main-description">
+              Join us at the Ebc 28th meetup, where aspiring founders, business owners, professionals, and students can share their stories. You'll have one minute to introduce yourself and discuss what you're building.
+            </p>
+            
+            <!-- Cards Grid -->
+            <div class="event-cards-grid">
+              
+              <!-- Date Card -->
+              <div class="info-card">
+                <div class="info-card-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                </div>
+                <div class="info-card-text">
+                  <span class="info-card-label">Date</span>
+                  <span class="info-card-value">Sunday, June 14th 2026</span>
+                </div>
+              </div>
+              
+              <!-- Time Card -->
+              <div class="info-card">
+                <div class="info-card-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                </div>
+                <div class="info-card-text">
+                  <span class="info-card-label">Time</span>
+                  <span class="info-card-value">9:00 AM - 11:00 AM</span>
+                  <span class="info-card-sub">Asia/Kolkata</span>
+                </div>
+              </div>
+              
+              <!-- Venue Card -->
+              <div class="info-card">
+                <div class="info-card-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
+                </div>
+                <div class="info-card-text">
+                  <span class="info-card-label">Venue</span>
+                  <span class="info-card-value">Birch Cafe Vanasthalipuram, Hyderabad</span>
+                </div>
+              </div>
+              
+            </div>
+          </div>
+          
+        </div>
+      </section>
+
+      <!-- Event Content Columns (Event Details + Attendees) -->
+      <div class="event-grid-layout">
+        
+        <!-- Left: Event Details -->
+        <div class="event-details-col">
+          <h2 class="panel-section-title">About Ebc 28th Meetup</h2>
+          <div class="about-rich-details" style="margin-top: 1rem;">
+            <p>Welcome to the <strong>Ekthaa Business & Builders Community (EBC)</strong>! We are the premier ecosystem in Hyderabad connecting founders, creators, software engineers, operators, and startup builders.</p>
+            
+            <p>Our monthly meetups are outcome-driven professional gatherings designed to break down barriers, create direct collaboration channels, and help you find co-founders, advisors, beta testers, and business partners.</p>
+            
+            <div class="details-feature-highlights">
+              <h4>What to expect:</h4>
+              <ul>
+                <li>💡 <strong>Curated Networking:</strong> Meet builders and developers actively building in AI, Web3, and SaaS.</li>
+                <li>🤝 <strong>Open Mic & Pitch:</strong> A 1-minute quick fire slot for anyone to introduce themselves and describe what they're building.</li>
+                <li>🍳 <strong>English Breakfast & Coffee:</strong> Included with your entry pass to fuel morning conversations.</li>
+              </ul>
+            </div>
+
+            <div class="details-cta-banner">
+              <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-details-register">
+                Register for Meetup Pass
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Right: Attendees Section -->
+        <div class="event-attendees-col">
+          <div class="attendees-header-row">
+            <h3 class="attendees-title">Attendees</h3>
+            <span class="attendees-count-badge" id="attendees-count-val">0</span>
+          </div>
+          <div class="attendees-list-scrollable" id="attendees-list-container">
+            <!-- Dynamically populated via JS -->
+          </div>
+        </div>
+
+      </div>
+      
+    </div>
+  </main>
+
+  <!-- Login/SSO Checkout Modal -->
+  <div class="modal-overlay hidden" id="checkout-login-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Secure Booking</h3>
+        <button class="modal-close-btn" id="btn-close-checkout-modal" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">Login to your <strong>Perenti</strong> account to complete the ticket registration.</p>
+        
+        <!-- Error Alert -->
+        <div class="auth-error-banner hidden" id="checkout-login-error" style="background-color: #fef2f2; border: 1px solid #ef4444; color: #991b1b; padding: 0.75rem 1rem; border-radius: 0.5rem; font-size: 0.8rem; font-weight: 600; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:1.1rem; height:1.1rem; flex-shrink:0;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span id="checkout-login-error-text">Invalid email or password.</span>
+        </div>
+
+        <form class="modal-form" id="checkout-login-form">
+          <div class="form-group">
+            <label for="login-email" class="form-label">Email Address</label>
+            <input type="email" id="login-email" class="form-control" required placeholder="name@domain.com">
+          </div>
+          <div class="form-group">
+            <label for="login-password" class="form-label">Password</label>
+            <input type="password" id="login-password" class="form-control" required placeholder="••••••••">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block btn-lg" id="btn-modal-login-submit">
+            Log In & Register
+          </button>
+        </form>
+        
+        <div class="oauth-divider">
+          <span>Or sign in with Google</span>
+        </div>
+        
+        <button type="button" class="btn btn-outline btn-block btn-lg" id="btn-google-login">
+          <svg class="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem; vertical-align: middle;">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+          </svg>
+          Sign in with Google
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth Choice Modal (Sign In / Create Account) -->
+  <div class="modal-overlay hidden" id="auth-choice-modal">
+    <div class="modal-card" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3 class="modal-title" style="font-family: 'Outfit', sans-serif;">Join Event</h3>
+        <button class="modal-close-btn" id="btn-close-auth-choice-modal" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; text-align: center;">
+        <p class="modal-desc" style="margin-bottom: 0.5rem; line-height: 1.5;">To book passes for the meetup, please sign in to your account or create a new one.</p>
+        
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; width: 100%;">
+          <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-auth-signin">
+            Sign In
+          </button>
+          <button type="button" class="btn btn-outline btn-block btn-lg" id="btn-auth-signup">
+            Create Account
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Registration Summary Modal -->
+  <div class="modal-overlay hidden" id="registration-summary-modal">
+    <div class="modal-card" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 class="modal-title" style="font-family: 'Outfit', sans-serif;">Registration Summary</h3>
+        <button class="modal-close-btn" id="btn-close-summary-modal" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem;">
+        <p class="modal-desc">Review the registration details and confirm your pass booking.</p>
+        
+        <!-- Quantity Selector Row -->
+        <div class="modal-qty-selector-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; background: var(--bg-info-card); padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid var(--divider);">
+          <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-main);">Number of Passes</span>
+          <div class="goavo-quantity-selector" style="display: flex; align-items: center; border: 1px solid var(--border-input); border-radius: 0.375rem; background-color: var(--bg-input); overflow: hidden;">
+            <button type="button" class="stepper-action-btn dec-btn" id="qty-dec" aria-label="Decrease quantity" style="border: none; background: transparent; color: var(--text-main); padding: 0.45rem 0.65rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 0.85rem; height: 0.85rem;">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+            <span class="stepper-count-val" id="qty-count" style="padding: 0 0.5rem; font-weight: 700; font-size: 1rem; min-width: 1.75rem; text-align: center;">1</span>
+            <button type="button" class="stepper-action-btn inc-btn" id="qty-inc" aria-label="Increase quantity" style="border: none; background: transparent; color: var(--text-main); padding: 0.45rem 0.65rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 0.85rem; height: 0.85rem;">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Order Summary Details -->
+        <div class="goavo-summary-panel" style="border: none; padding: 0; box-shadow: none;">
+          
+          <!-- Dynamic Calculation breakdown -->
+          <div class="summary-breakdown-details" id="summary-breakdown-view">
+            <div class="calculation-row">
+              <span class="calc-label">Meetup Pass (<span id="summary-qty">1</span>)</span>
+              <span class="calc-val" id="summary-subtotal">₹399.00</span>
+            </div>
+            
+            <div class="calculation-row sub-fee">
+              <span class="calc-label">Platform Fee (2.5%)</span>
+              <span class="calc-val" id="summary-platform-fee">₹9.98</span>
+            </div>
+            
+            <div class="calculation-row sub-fee">
+              <span class="calc-label">Gateway Fee (2.88%)</span>
+              <span class="calc-val" id="summary-gateway-fee">₹12.13</span>
+            </div>
+
+            <div class="calculation-row sub-fee">
+              <span class="calc-label">GST (18% of platform fee)</span>
+              <span class="calc-val" id="summary-gst">₹1.80</span>
+            </div>
+            
+            <!-- Applied Promo Code Badge -->
+            <div class="applied-promo-badge hidden" id="applied-promo-container">
+              <div class="promo-badge-content">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="promo-svg-icon">
+                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                  <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                </svg>
+                <span id="promo-code-name">CODE</span> applied (10% off)
+              </div>
+              <button type="button" class="promo-remove-action" id="btn-remove-discount" aria-label="Remove code">×</button>
+            </div>
+
+            <div class="summary-total-divider" style="margin: 0.75rem 0;"></div>
+            
+            <div class="calculation-row grand-total-row">
+              <span class="calc-label" style="font-weight: 700;">Total Amount</span>
+              <span class="calc-val" id="summary-total" style="font-size: 1.3rem; font-weight: 800; color: var(--brand-primary); font-family: 'Outfit', sans-serif;">₹422.91</span>
+            </div>
+          </div>
+          
+          <!-- Promo Code Form -->
+          <div class="summary-promo-container" style="margin-top: 1.25rem; border-top: 1px solid var(--divider); padding-top: 1.25rem;">
+            <span class="promo-heading-lbl">PROMO CODE</span>
+            <div class="promo-input-row" style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
+              <input type="text" id="promo-code-input" class="promo-textbox" placeholder="Enter promo code" aria-label="Promo code text input">
+              <button type="button" class="btn-promo-apply" id="btn-apply-discount" disabled>Apply</button>
+            </div>
+            <p class="promo-info-text" style="font-size: 0.75rem; margin-top: 0.25rem; color: var(--text-muted);">Promo discounts and totals are validated by the server. <a href="#" class="promo-remove-link" id="btn-promo-reset">Remove</a></p>
+            <p class="promo-status-msg error hidden" id="promo-status-error">Invalid promo code.</p>
+            <p class="promo-status-msg success hidden" id="promo-status-success">Promo code applied successfully!</p>
+          </div>
+          
+          <p class="fees-disclaimer-txt" style="font-size: 0.75rem; color: var(--text-muted); margin: 0.75rem 0 1.25rem 0;">Fees and taxes are shown when provided by the ticketing service.</p>
+
+          <!-- Checkout Action Buttons -->
+          <div style="display: flex; flex-direction: column; gap: 0.75rem; width: 100%;">
+            <button type="button" class="btn btn-checkout-action" id="btn-register-submit" disabled>
+              Checkout
+            </button>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Registration Questions Modal -->
+  <div class="modal-overlay hidden" id="registration-questions-modal">
+    <div class="modal-card" style="max-width: 550px;">
+      <div class="modal-header">
+        <h3 class="modal-title" style="font-family: 'Outfit', sans-serif;">Attendee Details</h3>
+        <button class="modal-close-btn" id="btn-close-questions-modal" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem; max-height: 80vh; overflow-y: auto;">
+        <p class="modal-desc" style="margin-bottom: 1.25rem;">Please answer a few questions from the organizer before completing your registration.</p>
+        
+        <form class="modal-form" id="registration-questions-form">
+          <div id="dynamic-questions-container">
+            <!-- Questions will be dynamically injected here by app.js -->
+          </div>
+          
+          <!-- Actions -->
+          <div style="margin-top: 0.2rem; display: flex; gap: 0.75rem;">
+            <button type="button" class="btn btn-secondary btn-block btn-lg" id="btn-back-to-summary" style="flex: 1; padding: 0.7rem 1.25rem; font-size: 0.95rem;">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-block btn-lg" id="btn-submit-questions" style="flex: 2; padding: 0.7rem 1.25rem; font-size: 0.95rem;">Continue to Checkout</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Digital Ticket Modal / Success Screen -->
+  <div class="modal-overlay hidden" id="digital-ticket-modal">
+    <div class="modal-card ticket-overlay-card">
+      <div class="modal-header" style="border-bottom: none; padding-bottom: 0.5rem;">
+        <h3 class="modal-title" style="opacity: 0; pointer-events: none;">Success</h3>
+        <button class="modal-close-btn" id="btn-close-ticket-modal" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body ticket-modal-body" style="padding-top: 0;">
+        
+        <!-- Registration Success Header details -->
+        <div style="text-align: center; margin-bottom: 1rem;">
+          <div style="width: 3.25rem; height: 3.25rem; border-radius: 50%; background-color: #ecfdf5; border: 2px solid #10b981; color: #10b981; display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; font-weight: 700; margin-bottom: 0.75rem;">✓</div>
+          <h3 style="color: #065f46; font-size: 1.35rem; font-weight: 850; font-family: 'Outfit', sans-serif; margin-bottom: 0.25rem;">Registration Successful!</h3>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; padding: 0 0.5rem;">A booking confirmation containing your digital tickets has been simulated and emailed to <strong id="success-email-target"></strong>.</p>
+        </div>
+
+        <div style="display: flex; justify-content: center; margin-bottom: 1.25rem;">
+          <button type="button" class="btn btn-primary" id="btn-view-simulated-email-index" style="background-color: #10b981; border-color: #10b981; color: white; font-size: 0.8rem; padding: 0.5rem 1rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.4rem; justify-content: center; box-shadow: var(--shadow-sm);">
+            ✉️ View Simulated Email
+          </button>
+        </div>
+        
+        <!-- Container for dynamically generated ticket stubs -->
+        <div id="user-tickets-container" style="display: flex; flex-direction: column; gap: 1.5rem;">
+          <!-- Dynamic ticket stubs will be generated and appended here -->
+        </div>
+        
+        <div class="ticket-actions-row" style="margin-top: 1rem; display: flex; gap: 0.5rem; width: 100%;">
+          <button type="button" class="btn btn-secondary btn-block" id="btn-print-ticket" style="flex: 1;">Print Tickets</button>
+          <a href="user-dashboard.html" class="btn btn-primary btn-block" id="btn-done-ticket" style="flex: 1; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center;">Go to Tickets Hub</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Simulated Email Preview Modal -->
+  <div class="modal-overlay hidden" id="email-preview-modal">
+    <div class="modal-card" style="max-width: 600px;">
+      <div class="modal-header" style="background-color: #f8fafc; border-bottom: 1px solid var(--divider);">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.15rem;">✉️</span>
+          <h3 class="modal-title" style="font-size: 1rem; color: var(--text-main);">Simulated Ticket Email</h3>
+        </div>
+        <button class="modal-close-btn" id="btn-close-email-modal" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem; background-color: #f1f5f9;">
+        <div class="email-headers" style="background: white; border: 1px solid var(--border-card); border-radius: 0.5rem; padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 0.8rem; line-height: 1.5; color: var(--text-secondary);">
+          <p style="margin: 0 0 0.2rem 0;"><strong>From:</strong> Perenti Tickets &lt;tickets@perenti.com&gt;</p>
+          <p style="margin: 0 0 0.2rem 0;"><strong>To:</strong> <span id="email-to-display">user@domain.com</span></p>
+          <p style="margin: 0 0 0.2rem 0;"><strong>Subject:</strong> Confirmation: Your Passes for Ebc 28th Meetup (Offline Payment)</p>
+          <p style="margin: 0;"><strong>Date:</strong> <span id="email-date-display">Today</span></p>
+        </div>
+        <div class="email-body-content" style="background: white; border: 1px solid var(--border-card); border-radius: 0.5rem; padding: 1.5rem; font-family: 'Inter', sans-serif; font-size: 0.85rem; line-height: 1.5; color: #475569; max-height: 50vh; overflow-y: auto;">
+          <div style="text-align: center; margin-bottom: 1.25rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem;">
+            <span style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.6rem; background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-hover)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">perenti</span>
+            <p style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 0.15rem 0 0 0;">Booking Confirmation</p>
+          </div>
+          
+          <p style="margin: 0 0 0.75rem 0;">Hi there,</p>
+          <p style="margin: 0 0 0.75rem 0;">Thank you for booking your passes for the <strong>Ebc 28th Meetup</strong>! Since this event uses offline payment, your bookings have been successfully reserved. You can settle the ticket fee at the venue counter upon arrival.</p>
+          
+          <div style="background-color: var(--bg-info-card); border-left: 3px solid var(--brand-primary); padding: 0.75rem 1rem; border-radius: 0 0.5rem 0.5rem 0; margin: 1rem 0;">
+            <h4 style="margin: 0 0 0.35rem 0; color: var(--text-main); font-size: 0.9rem;">Event Details</h4>
+            <p style="margin: 0; font-size: 0.8rem;">📅 <strong>Date:</strong> Sunday, June 14, 2026</p>
+            <p style="margin: 0 0 0.15rem 0; font-size: 0.8rem;">⏰ <strong>Time:</strong> 9:00 AM - 11:00 AM (Asia/Kolkata)</p>
+            <p style="margin: 0; font-size: 0.8rem;">📍 <strong>Venue:</strong> Birch Cafe, Hyderabad</p>
+          </div>
+
+          <p style="margin: 0 0 1rem 0;">We've attached your <strong><span id="email-qty-display">1</span> Ticket Pass(es)</strong> below. You can also view or print them at any time by logging into your <a href="user-dashboard.html" style="color: var(--brand-primary); font-weight: 600; text-decoration: none;">Perenti Tickets Hub</a>.</p>
+          
+          <div id="email-tickets-list" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+            <!-- stubs inline in email -->
+          </div>
+
+          <div style="margin-top: 1.5rem; border-top: 1px solid #f1f5f9; padding-top: 0.75rem; text-align: center; font-size: 0.75rem; color: var(--text-muted);">
+            <p style="margin: 0 0 0.2rem 0;">Need help? Contact support at support@perenti.com.</p>
+            <p style="margin: 0;">© 2026 Perenti Inc. Smart Events, Seamless Outcomes.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attendee Profile Detail Modal -->
+  <div class="modal-overlay hidden" id="attendee-profile-modal">
+    <div class="modal-card" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3 class="modal-title" style="font-family: 'Outfit', sans-serif;">Attendee Profile</h3>
+        <button class="modal-close-btn" id="btn-close-attendee-modal" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; text-align: center;">
+        
+        <div class="attendee-avatar" id="modal-attendee-avatar" style="width: 4.5rem; height: 4.5rem; font-size: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-hover)); color: #fff; font-weight: 700; font-family: 'Outfit', sans-serif;">U</div>
+        
+        <div style="width: 100%;">
+          <h4 id="modal-attendee-name" style="font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem;">User Name</h4>
+          <p id="modal-attendee-email" style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">user@domain.com</p>
+          
+          <div style="display: flex; flex-direction: column; gap: 0.5rem; background: var(--bg-info-card); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--divider); margin-bottom: 1.25rem; text-align: left;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+              <span style="color: var(--text-secondary);">Registration Status:</span>
+              <span id="modal-attendee-status" class="attendee-status-indicator checked-in">Checked In</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-top: 0.4rem;">
+              <span style="color: var(--text-secondary);">Tickets Booked:</span>
+              <span id="modal-attendee-tickets-count" style="font-weight: 600; color: var(--text-main);">1 Pass</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-top: 0.4rem;">
+              <span style="color: var(--text-secondary);">RSVP Timestamp:</span>
+              <span id="modal-attendee-time" style="font-weight: 500; color: var(--text-main); font-size: 0.8rem;">-</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; width: 100%;">
+          <button type="button" class="btn btn-outline btn-block btn-lg" id="btn-modal-attendee-message" style="flex: 1;">Message</button>
+          <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-modal-attendee-connect" style="flex: 1; background: var(--brand-primary); color: #fff;">Connect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Check-in Dashboard Modal -->
+  <div class="modal-overlay hidden" id="admin-dashboard-modal">
+    <div class="modal-card admin-dashboard-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Admin Check-in Dashboard</h3>
+        <button class="modal-close-btn" id="btn-close-admin-modal" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body admin-modal-body">
+        
+        <!-- Top Stats Box -->
+        <div class="admin-stats-row">
+          <div class="admin-stat-box">
+            <span class="stat-num" id="admin-stat-total">0</span>
+            <span class="stat-label">Total Registered</span>
+          </div>
+          <div class="admin-stat-box">
+            <span class="stat-num" id="admin-stat-checked">0</span>
+            <span class="stat-label">Checked In</span>
+          </div>
+          <div class="admin-stat-box">
+            <span class="stat-num" id="admin-stat-pending">0</span>
+            <span class="stat-label">Pending</span>
+          </div>
+          <div class="admin-stat-box">
+            <span class="stat-num" id="admin-stat-revenue">₹0.00</span>
+            <span class="stat-label">Revenue</span>
+          </div>
+          <div class="admin-stat-box">
+            <span class="stat-num" id="admin-stat-attendance-rate">0%</span>
+            <span class="stat-label">Attendance Rate</span>
+          </div>
+        </div>
+        
+        <!-- Success/Error Messages -->
+        <div class="admin-scan-result-banner hidden" id="admin-scan-success-banner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="banner-success-svg">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          <span id="admin-scan-success-text">Check-in successful!</span>
+        </div>
+        
+        <div class="admin-scan-result-banner error hidden" id="admin-scan-error-banner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="banner-error-svg">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span id="admin-scan-error-text">Check-in failed!</span>
+        </div>
+        
+        <!-- Viewfinder Simulator Column -->
+        <div class="admin-grid-layout">
+          
+          <div class="admin-left-scanner">
+            <div class="scanner-viewfinder">
+              <div class="scanner-laser-line"></div>
+              <div class="scanner-corners">
+                <span class="corner top-left"></span>
+                <span class="corner top-right"></span>
+                <span class="corner bottom-left"></span>
+                <span class="corner bottom-right"></span>
+              </div>
+              <div class="scanner-placeholder-content">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 2.5rem; height: 2.5rem; opacity: 0.25; color: var(--text-main); margin-bottom: 0.5rem;">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                  <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+                <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted);">Camera Scanner Active</span>
+              </div>
+            </div>
+            
+            <div class="scanner-actions">
+              <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-admin-simulate-scan">
+                Simulate QR Scan
+              </button>
+            </div>
+            
+            <div class="admin-manual-checkin">
+              <span class="admin-label-small">MANUAL TICKET CHECK-IN</span>
+              <div class="manual-checkin-row">
+                <input type="text" id="manual-ticket-id-input" class="promo-textbox" placeholder="Enter Ticket ID (e.g. PRNT-EBC28-...)" aria-label="Manual Ticket check-in input">
+                <button type="button" class="btn btn-primary btn-sm" id="btn-admin-manual-checkin">Verify</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="admin-right-list">
+            <span class="admin-label-small">RECENTLY CHECKED-IN</span>
+            <div class="checked-in-list-container">
+              <table class="attendees-table">
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Ticket ID</th>
+                    <th>Time</th>
+                  </tr>
+                </thead>
+                <tbody id="attendees-list-body">
+                  <tr class="empty-list-row">
+                    <td colspan="3" style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 1.5rem 0;">No attendees checked in yet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <a href="#" class="brand-link">
+          <span class="brand-name">perenti</span>
+        </a>
+        <p class="footer-tagline">The Event Intelligence OS for professional outcomes.</p>
+      </div>
+      
+        <div class="footer-col">
+          <h4 class="footer-col-title">Product</h4>
+          <ul>
+            <li><a href="#">Features</a></li>
+            <li><a href="#">Solutions</a></li>
+            <li><a href="#">Pricing</a></li>
+            <li><a href="#">Roadmap</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4 class="footer-col-title">Resources</h4>
+          <ul>
+            <li><a href="#">Documentation</a></li>
+            <li><a href="#">Help Center</a></li>
+            <li><a href="#">API Reference</a></li>
+            <li><a href="#">Status</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4 class="footer-col-title">Company</h4>
+          <ul>
+            <li><a href="#">About Us</a></li>
+            <li><a href="#">Careers</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+          </ul>
+        </div>
+    </div>
+    
+    <div class="footer-bottom">
+      <div class="footer-bottom-container">
+        <p class="copyright">&copy; 2026 Perenti.ai. All rights reserved.</p>
+        <div class="social-links">
+          <a href="#" class="social-link" aria-label="Twitter">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="social-icon"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path></svg>
+          </a>
+          <a href="#" class="social-link" aria-label="LinkedIn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="social-icon"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+          </a>
+          <a href="#" class="social-link" aria-label="GitHub">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="social-icon"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast Notification -->
+  <div class="toast-notification" id="share-toast">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="toast-icon">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </svg>
+    <span>Event link copied to clipboard!</span>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="app.js?v=12"></script>
+</body>
+</html>

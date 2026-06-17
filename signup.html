@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up | Perenti</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=17">
+  <style>
+    .auth-page-wrapper {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-primary);
+    }
+    .auth-card-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem;
+    }
+    .auth-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 1rem;
+      width: 100%;
+      max-width: 440px;
+      padding: 2.5rem 2rem;
+      box-shadow: var(--shadow-lg);
+    }
+    .auth-title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 0.5rem;
+      text-align: center;
+    }
+    .auth-subtitle {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .auth-error-banner {
+      background-color: #fef2f2;
+      border: 1px solid #ef4444;
+      color: #991b1b;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .auth-switch-prompt {
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-top: 1.5rem;
+    }
+    .auth-switch-prompt a {
+      color: var(--brand-primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .auth-switch-prompt a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body class="auth-page-wrapper">
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="index.html" class="brand-link">
+        <span class="brand-name">perenti</span>
+      </a>
+      <span class="brand-tagline">Smart Events, Seamless Outcomes</span>
+    </div>
+  </header>
+
+  <!-- Signup Card Section -->
+  <div class="auth-card-container">
+    <div class="auth-card">
+      <h2 class="auth-title">Create your account</h2>
+      <p class="auth-subtitle">Join Perenti to book meetup passes and track check-ins seamlessly.</p>
+      
+      <!-- Error Alert -->
+      <div class="auth-error-banner hidden" id="signup-error-alert">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:1.1rem; height:1.1rem; flex-shrink:0;">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <span id="signup-error-text">Sign up failed</span>
+      </div>
+
+      <form class="modal-form" id="signup-form">
+        <div class="form-group">
+          <label for="signup-email" class="form-label">Email Address</label>
+          <input type="email" id="signup-email" class="form-control" required placeholder="name@domain.com">
+        </div>
+        
+        <div class="form-group">
+          <label for="signup-role" class="form-label">Account Role</label>
+          <select id="signup-role" class="form-control" style="appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M5%207.5L10%2012.5L15%207.5%22%20stroke%3D%22%236B7280%22%20stroke-width%3D%221.67%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 1.25rem;">
+            <option value="user">General User (Book Passes)</option>
+            <option value="admin">Event Organizer / Admin (Scan QR & Check-in)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="signup-password" class="form-label">Password</label>
+          <input type="password" id="signup-password" class="form-control" required placeholder="••••••••">
+        </div>
+
+        <div class="form-group">
+          <label for="signup-confirm-password" class="form-label">Confirm Password</label>
+          <input type="password" id="signup-confirm-password" class="form-control" required placeholder="••••••••">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top: 1rem;">
+          Create Account
+        </button>
+      </form>
+
+      <p class="auth-switch-prompt">
+        Already have an account? <a href="login.html">Log in</a>
+      </p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth, db } from './firebase-config.js';
+    import { createUserWithEmailAndPassword, sendEmailVerification, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+    import { doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+    // Auto-redirect 127.0.0.1 to localhost to avoid Firebase unauthorized domain error
+    if (window.location.hostname === '127.0.0.1') {
+      window.location.hostname = 'localhost';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const signupForm = document.getElementById('signup-form');
+      const emailInput = document.getElementById('signup-email');
+      const passwordInput = document.getElementById('signup-password');
+      const confirmInput = document.getElementById('signup-confirm-password');
+      const roleSelect = document.getElementById('signup-role');
+      const errorAlert = document.getElementById('signup-error-alert');
+      const errorText = document.getElementById('signup-error-text');
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectQty = urlParams.get('qty');
+      const redirectUrl = urlParams.get('redirect');
+
+      signupForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorAlert.classList.add('hidden');
+
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+        const confirmPassword = confirmInput.value;
+        const role = roleSelect.value;
+
+        if (password !== confirmPassword) {
+          errorText.textContent = 'Passwords do not match.';
+          errorAlert.classList.remove('hidden');
+          return;
+        }
+
+        try {
+          // Register user in Firebase Auth
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          const user = userCredential.user;
+
+          // Save role mapping
+          try {
+            await setDoc(doc(db, 'users', user.email), {
+              email: user.email,
+              role: role,
+              createdAt: new Date().toISOString()
+            });
+          } catch(e) { console.error("Error saving user role", e); }
+
+          // Send verification email
+          await sendEmailVerification(user);
+          
+          // Sign out the user so they are forced to log in after verifying
+          await signOut(auth);
+
+          // Build a login redirect string preserving the state
+          let targetLoginUrl = 'login.html?verify_prompt=1';
+          if (redirectQty) targetLoginUrl += `&qty=${redirectQty}`;
+          if (redirectUrl) targetLoginUrl += `&redirect=${encodeURIComponent(redirectUrl)}`;
+          
+          window.location.href = targetLoginUrl;
+        } catch (error) {
+          console.error("Error signing up:", error);
+          errorText.textContent = error.message;
+          errorAlert.classList.remove('hidden');
+        }
+      });
+
+      async function bookTicketsForUser(email, qty, paymentType = 'offline') {
+        const orderNum = Math.floor(10000 + Math.random() * 90000);
+        
+        try {
+          const settingsRef = doc(db, 'eventSettings', 'main');
+          const settingsSnap = await getDoc(settingsRef);
+          let ticketsRemaining = 60;
+          if (settingsSnap.exists()) {
+            ticketsRemaining = settingsSnap.data().ticketsRemaining ?? 60;
+          }
+          ticketsRemaining = Math.max(0, ticketsRemaining - qty);
+          await updateDoc(settingsRef, { ticketsRemaining });
+        } catch(e) { console.error(e); }
+
+        const newTicketIds = [];
+        for (let i = 1; i <= qty; i++) {
+          const ticketIdStr = `PRNT-EBC28-${orderNum}-${i}`;
+          const ticketData = {
+            id: ticketIdStr,
+            email: email,
+            qty: 1,
+            status: 'unused',
+            payment: paymentType,
+            approval: 'pending',
+            timestamp: new Date().toLocaleString()
+          };
+          try {
+            await setDoc(doc(db, 'tickets', ticketIdStr), ticketData);
+          } catch(e) { console.error(e); }
+          
+          newTicketIds.push(ticketIdStr);
+        }
+
+        localStorage.setItem('lastGeneratedTickets', JSON.stringify(newTicketIds));
+        localStorage.setItem('justBookedQty', qty);
+        localStorage.setItem('justBookedEmail', email);
+
+        window.location.href = 'user-dashboard.html';
+      }
+    });
+  </script>
+</body>
+</html>

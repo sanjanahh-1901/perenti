@@ -1,0 +1,13 @@
+{
+  "name": "perenti-website",
+  "version": "1.0.0",
+  "description": "Perenti website prototype",
+  "main": "app.js",
+  "scripts": {
+    "dev": "npx http-server . -p 8080 -c-1"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
