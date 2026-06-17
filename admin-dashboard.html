@@ -2,48 +2,54 @@
 <html lang="en">
 <head>
   <script>
-    window.addEventListener('error', function(e) {
+    function displayDebugError(message, isWarning = false) {
       const errDiv = document.createElement('div');
       errDiv.className = 'debug-error';
-      errDiv.style.color = 'red';
-      errDiv.style.background = '#fee2e2';
-      errDiv.style.padding = '10px';
-      errDiv.style.border = '1px solid red';
+      errDiv.style.color = isWarning ? '#b45309' : '#b91c1c';
+      errDiv.style.background = isWarning ? '#fef3c7' : '#fee2e2';
+      errDiv.style.padding = '12px 16px';
+      errDiv.style.border = isWarning ? '1px solid #f59e0b' : '1px solid #ef4444';
       errDiv.style.margin = '10px';
       errDiv.style.fontSize = '12px';
-      errDiv.style.zIndex = '99999';
-      errDiv.style.position = 'relative';
-      errDiv.textContent = 'Global Error: ' + e.message + ' at ' + e.filename + ':' + e.lineno;
-      document.documentElement.appendChild(errDiv);
+      errDiv.style.fontFamily = 'monospace';
+      errDiv.style.zIndex = '999999';
+      errDiv.style.position = 'fixed';
+      errDiv.style.top = '20px';
+      errDiv.style.right = '20px';
+      errDiv.style.maxWidth = '350px';
+      errDiv.style.borderRadius = '6px';
+      errDiv.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.15)';
+      errDiv.style.wordBreak = 'break-word';
+      
+      // Close button
+      const closeBtn = document.createElement('span');
+      closeBtn.textContent = ' ✕ ';
+      closeBtn.style.cursor = 'pointer';
+      closeBtn.style.float = 'right';
+      closeBtn.style.fontWeight = 'bold';
+      closeBtn.style.marginLeft = '10px';
+      closeBtn.addEventListener('click', () => errDiv.remove());
+      errDiv.appendChild(closeBtn);
+
+      const textNode = document.createTextNode(message);
+      errDiv.appendChild(textNode);
+
+      if (document.body) {
+        document.body.appendChild(errDiv);
+      } else {
+        document.documentElement.appendChild(errDiv);
+      }
+    }
+
+    window.addEventListener('error', function(e) {
+      displayDebugError('Global Error: ' + e.message + ' at ' + e.filename + ':' + e.lineno);
     });
     window.addEventListener('unhandledrejection', function(e) {
-      const errDiv = document.createElement('div');
-      errDiv.className = 'debug-error';
-      errDiv.style.color = 'red';
-      errDiv.style.background = '#fee2e2';
-      errDiv.style.padding = '10px';
-      errDiv.style.border = '1px solid red';
-      errDiv.style.margin = '10px';
-      errDiv.style.fontSize = '12px';
-      errDiv.style.zIndex = '99999';
-      errDiv.style.position = 'relative';
-      errDiv.textContent = 'Unhandled Rejection: ' + e.reason;
-      document.documentElement.appendChild(errDiv);
+      displayDebugError('Unhandled Rejection: ' + e.reason);
     });
     const originalConsoleError = console.error;
     console.error = function(...args) {
-      const errDiv = document.createElement('div');
-      errDiv.className = 'debug-error';
-      errDiv.style.color = 'orange';
-      errDiv.style.background = '#ffedd5';
-      errDiv.style.padding = '10px';
-      errDiv.style.border = '1px solid orange';
-      errDiv.style.margin = '10px';
-      errDiv.style.fontSize = '12px';
-      errDiv.style.zIndex = '99999';
-      errDiv.style.position = 'relative';
-      errDiv.textContent = 'Console Error: ' + args.join(' ');
-      document.documentElement.appendChild(errDiv);
+      displayDebugError('Console Error: ' + args.join(' '), false);
       originalConsoleError.apply(console, args);
     };
   </script>
@@ -211,6 +217,48 @@
       padding-top: 1rem;
       border-top: 1px solid var(--divider);
     }
+    @keyframes scan-laser-box {
+      0% { top: 0%; opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+    .scanner-overlay-box {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 220px;
+      height: 220px;
+      transform: translate(-50%, -50%);
+      border: 1px solid rgba(90, 154, 142, 0.4);
+      border-radius: 0.5rem;
+      box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.65); /* dark mask backdrop overlay */
+      z-index: 2;
+      overflow: hidden;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .scanner-overlay-laser {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background-color: #ef4444;
+      box-shadow: 0 0 8px #ef4444;
+      animation: scan-laser-box 2s infinite linear;
+    }
+    .scanner-overlay-corner {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-color: var(--brand-primary);
+      border-style: solid;
+      border-width: 0;
+    }
+    .scanner-overlay-corner.top-left { border-top-width: 3px; border-left-width: 3px; border-top-left-radius: 4px; top: 0; left: 0; }
+    .scanner-overlay-corner.top-right { border-top-width: 3px; border-right-width: 3px; border-top-right-radius: 4px; top: 0; right: 0; }
+    .scanner-overlay-corner.bottom-left { border-bottom-width: 3px; border-left-width: 3px; border-bottom-left-radius: 4px; bottom: 0; left: 0; }
+    .scanner-overlay-corner.bottom-right { border-bottom-width: 3px; border-right-width: 3px; border-bottom-right-radius: 4px; bottom: 0; right: 0; }
   </style>
 </head>
 <body class="dashboard-page-wrapper">
@@ -310,15 +358,13 @@
             <!-- Real QR reader video layer -->
             <div id="qr-reader" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;"></div>
             
-            <!-- Laser overlay -->
-            <div class="scanner-laser-line hidden" id="scanner-laser" style="z-index: 3;"></div>
-            
-            <!-- Target boundary corners -->
-            <div class="scanner-corners" style="z-index: 2;">
-              <span class="corner top-left"></span>
-              <span class="corner top-right"></span>
-              <span class="corner bottom-left"></span>
-              <span class="corner bottom-right"></span>
+            <!-- Viewfinder Overlay Box -->
+            <div id="scanner-overlay-box" class="scanner-overlay-box hidden">
+              <div class="scanner-overlay-laser"></div>
+              <div class="scanner-overlay-corner top-left"></div>
+              <div class="scanner-overlay-corner top-right"></div>
+              <div class="scanner-overlay-corner bottom-left"></div>
+              <div class="scanner-overlay-corner bottom-right"></div>
             </div>
             
             <!-- Inactive Placeholder overlay -->
@@ -867,7 +913,7 @@
       const startScanBtn = document.getElementById('btn-start-camera-scan');
       const stopScanBtn = document.getElementById('btn-stop-camera-scan');
       const scanPlaceholder = document.getElementById('scanner-placeholder');
-      const laserLine = document.getElementById('scanner-laser');
+      const scannerOverlay = document.getElementById('scanner-overlay-box');
 
       try {
         html5QrCode = new Html5Qrcode("qr-reader");
@@ -889,24 +935,48 @@
         if (!html5QrCode) return;
         try {
           scanPlaceholder.classList.add('hidden');
-          laserLine.classList.remove('hidden');
+          if (scannerOverlay) scannerOverlay.classList.remove('hidden');
           startScanBtn.classList.add('hidden');
           stopScanBtn.classList.remove('hidden');
           
-          await html5QrCode.start(
-            {
-              facingMode: "environment",
-              width: { min: 640, ideal: 1280, max: 1920 },
-              height: { min: 480, ideal: 720, max: 1080 }
-            },
-            {
-              fps: 15
-            },
-            onScanSuccess,
-            (errorMessage) => {
-              // Ignore failure logs to avoid polluting the console
+          const scanConfig = {
+            fps: 15,
+            qrbox: (width, height) => {
+              const size = Math.min(width, height, 220);
+              return { width: size, height: size };
             }
-          );
+          };
+
+          // Fallback camera constraint sequence
+          try {
+            // Attempt 1: back camera with resolution preferences
+            await html5QrCode.start(
+              { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+              scanConfig,
+              onScanSuccess,
+              () => {}
+            );
+          } catch (err1) {
+            console.warn("Camera start with environment failed, trying user camera...", err1);
+            try {
+              // Attempt 2: front camera with resolution preferences (laptop webcams)
+              await html5QrCode.start(
+                { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
+                scanConfig,
+                onScanSuccess,
+                () => {}
+              );
+            } catch (err2) {
+              console.warn("Camera start with user failed, trying default camera...", err2);
+              // Attempt 3: absolute fallback - default browser selected camera with no resolution constraints
+              await html5QrCode.start(
+                {},
+                scanConfig,
+                onScanSuccess,
+                () => {}
+              );
+            }
+          }
           isScanning = true;
         } catch (err) {
           console.error("Error starting camera scan:", err);
@@ -918,7 +988,7 @@
       async function stopCameraScan() {
         if (!html5QrCode || !isScanning) {
           scanPlaceholder.classList.remove('hidden');
-          laserLine.classList.add('hidden');
+          if (scannerOverlay) scannerOverlay.classList.add('hidden');
           startScanBtn.classList.remove('hidden');
           stopScanBtn.classList.add('hidden');
           return;
@@ -930,7 +1000,7 @@
         } finally {
           isScanning = false;
           scanPlaceholder.classList.remove('hidden');
-          laserLine.classList.add('hidden');
+          if (scannerOverlay) scannerOverlay.classList.add('hidden');
           startScanBtn.classList.remove('hidden');
           stopScanBtn.classList.add('hidden');
         }
