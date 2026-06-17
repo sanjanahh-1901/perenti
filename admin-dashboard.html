@@ -60,7 +60,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=19">
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" type="text/javascript"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <style>
     #qr-reader video {
       width: 100% !important;
@@ -1129,107 +1129,95 @@
         }, 5000);
       }
 
-      // Initialize Html5Qrcode
-      let html5QrCode;
-      let isScanning = false;
+      // ── QR Scanner (raw getUserMedia + jsQR) ──
+      let isScanning     = false;
       let isStartingScan = false;
-      let lastScannedId = null;
-      let lastScanTime = 0;
+      let lastScannedId  = null;
+      let lastScanTime   = 0;
+      let scanStream     = null;
+      let scanRafId      = null;
 
       const qrReaderContainer = document.getElementById('qr-reader');
-      const startScanBtn = document.getElementById('btn-start-camera-scan');
-      const stopScanBtn = document.getElementById('btn-stop-camera-scan');
-      const scanPlaceholder = document.getElementById('scanner-placeholder');
-      const scannerOverlay = document.getElementById('scanner-overlay-box');
+      const startScanBtn      = document.getElementById('btn-start-camera-scan');
+      const stopScanBtn       = document.getElementById('btn-stop-camera-scan');
+      const scanPlaceholder   = document.getElementById('scanner-placeholder');
+      const scannerOverlay    = document.getElementById('scanner-overlay-box');
 
-      try {
-        html5QrCode = new Html5Qrcode("qr-reader");
-      } catch (e) {
-        console.error("QR Scanner initialization failed", e);
-      }
+      // Reusable off-screen canvas for frame capture
+      const _scanCanvas = document.createElement('canvas');
+      const _scanCtx    = _scanCanvas.getContext('2d', { willReadFrequently: true });
 
-      function onScanSuccess(decodedText, decodedResult) {
-        const now = Date.now();
-        // Debounce: prevent duplicate scans within 3 seconds
-        if (decodedText !== lastScannedId || (now - lastScanTime) > 3000) {
-          lastScannedId = decodedText;
-          lastScanTime = now;
-          processCheckIn(decodedText);
+      // Video element injected into the viewfinder
+      const _scanVideo  = document.createElement('video');
+      _scanVideo.setAttribute('playsinline', 'true'); // required on iOS
+      _scanVideo.setAttribute('muted', 'true');
+      _scanVideo.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1;';
+
+      function _scanTick() {
+        if (!isScanning) return;
+        if (_scanVideo.readyState >= _scanVideo.HAVE_ENOUGH_DATA) {
+          _scanCanvas.width  = _scanVideo.videoWidth;
+          _scanCanvas.height = _scanVideo.videoHeight;
+          _scanCtx.drawImage(_scanVideo, 0, 0);
+          const imgData = _scanCtx.getImageData(0, 0, _scanCanvas.width, _scanCanvas.height);
+          const result  = jsQR(imgData.data, imgData.width, imgData.height, {
+            inversionAttempts: 'attemptBoth'
+          });
+          if (result && result.data) {
+            const now = Date.now();
+            if (result.data !== lastScannedId || (now - lastScanTime) > 3000) {
+              lastScannedId = result.data;
+              lastScanTime  = now;
+              processCheckIn(result.data);
+              return; // stopCameraScan() called inside processCheckIn on success
+            }
+          }
         }
+        scanRafId = requestAnimationFrame(_scanTick);
       }
 
       async function startCameraScan() {
         if (isScanning || isStartingScan) return;
         isStartingScan = true;
-
         try {
           scanPlaceholder.classList.add('hidden');
           if (scannerOverlay) scannerOverlay.classList.remove('hidden');
           startScanBtn.classList.add('hidden');
           stopScanBtn.classList.remove('hidden');
 
-          // Lean config — no aspectRatio (causes constraint rejection on some webcams)
-          const scanConfig = {
-            fps: 25,
-            qrbox: { width: 250, height: 250 }, // Fixed size aligned with visual overlay
-            experimentalFeatures: { useBarCodeDetectorIfSupported: true }
-          };
+          // Request camera — prefer rear/environment, fall back gracefully on desktop
+          scanStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+          });
 
-          // Tear down any previous (possibly corrupt) instance cleanly
-          if (html5QrCode) {
-            try { await html5QrCode.stop(); } catch (_) {}
-            html5QrCode = null;
-          }
-
-          // Enumerate cameras first — this is the most reliable cross-platform path.
-          // getCameras() triggers the permission dialog only once, then returns device IDs
-          // that work universally (unlike facingMode which silently fails on many desktops).
-          const devices = await Html5Qrcode.getCameras();
-          if (!devices || devices.length === 0) throw new Error("No camera found.");
-
-          // Prefer back / rear / environment camera (mobile); fall back to first (desktop webcam)
-          const cam = devices.find(d => /back|rear|environment/i.test(d.label || '')) || devices[0];
-
-          html5QrCode = new Html5Qrcode("qr-reader");
-          await html5QrCode.start(
-            cam.id,
-            scanConfig,
-            onScanSuccess,
-            () => {} // Silence per-frame "no QR found" noise
-          );
+          // Mount video element into the viewfinder
+          qrReaderContainer.innerHTML = '';
+          qrReaderContainer.appendChild(_scanVideo);
+          _scanVideo.srcObject = scanStream;
+          await _scanVideo.play();
 
           isScanning = true;
+          scanRafId  = requestAnimationFrame(_scanTick);
         } catch (err) {
-          console.error("Error starting camera scan:", err);
-          showCheckinError("Error: Could not access camera. Please check permissions.");
+          console.error('Camera start error:', err);
+          showCheckinError('Error: Could not access camera. Please allow camera permissions.');
           stopCameraScan();
         } finally {
           isStartingScan = false;
         }
       }
 
-      async function stopCameraScan() {
-        // Clear UI states regardless
+      function stopCameraScan() {
+        isScanning = false;
+        if (scanRafId) { cancelAnimationFrame(scanRafId); scanRafId = null; }
+        if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+        _scanVideo.srcObject = null;
+        qrReaderContainer.innerHTML = '';
+
         scanPlaceholder.classList.remove('hidden');
         if (scannerOverlay) scannerOverlay.classList.add('hidden');
         startScanBtn.classList.remove('hidden');
         stopScanBtn.classList.add('hidden');
-
-        if (!html5QrCode) {
-          isScanning = false;
-          return;
-        }
-
-        try {
-          // Attempt to stop only if the library is currently scanning
-          if (isScanning) {
-            await html5QrCode.stop();
-          }
-        } catch (err) {
-          console.error("Error stopping camera scan:", err);
-        } finally {
-          isScanning = false;
-        }
       }
 
       if (startScanBtn) {
