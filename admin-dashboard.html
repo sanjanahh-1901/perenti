@@ -870,7 +870,7 @@
         localStorage.setItem('tickets', JSON.stringify(localTickets));
 
         // Optimistically show success and re-render table instantly!
-        showCheckinSuccess(`Check-in successful: Ticket ${cleanId} (${ticket.email})!`);
+        showCheckinSuccess(`Check-in Successful!`);
         renderDashboardUI();
 
         // Perform Firestore update in the background
