@@ -637,7 +637,7 @@
         try {
           const querySnapshot = await getDocs(collection(db, 'tickets'));
           querySnapshot.forEach((docSnap) => {
-            tickets.push(docSnap.data());
+            tickets.push({ id: docSnap.id, ...docSnap.data() });
           });
         } catch(e) { 
           console.warn("Firestore tickets load failed, using local storage:", e);
