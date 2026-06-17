@@ -940,11 +940,7 @@
           stopScanBtn.classList.remove('hidden');
           
           const scanConfig = {
-            fps: 15,
-            qrbox: (width, height) => {
-              const size = Math.min(width, height, 220);
-              return { width: size, height: size };
-            }
+            fps: 15
           };
 
           // 1. Query all available camera devices
