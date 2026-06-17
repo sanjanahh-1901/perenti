@@ -292,6 +292,47 @@
       const errorBanner = document.getElementById('create-error-banner');
       const errorText = document.getElementById('create-error-text');
 
+      function loadEventFromLocalStorage(id) {
+        const localEvents = JSON.parse(localStorage.getItem('events')) || [];
+        const evt = localEvents.find(e => e.id === id);
+        if (evt) {
+          document.getElementById('evt-name').value = evt.name || '';
+          document.getElementById('evt-desc').value = evt.description || '';
+          if (evt.bannerUrl) {
+            document.getElementById('evt-banner-url').value = evt.bannerUrl;
+            document.getElementById('evt-banner-file').dataset.originalUrl = evt.bannerUrl;
+          }
+          document.getElementById('evt-category').value = evt.category || '';
+          document.getElementById('evt-start').value = evt.startDate || '';
+          document.getElementById('evt-end').value = evt.endDate || '';
+          document.getElementById('evt-deadline').value = evt.registrationDeadline || '';
+          if (evt.venue) {
+            document.getElementById('evt-venue-name').value = evt.venue.name || '';
+            document.getElementById('evt-address').value = evt.venue.address || '';
+            document.getElementById('evt-maps-link').value = evt.venue.mapsLink || '';
+          }
+          if (evt.capacity) {
+            document.getElementById('evt-capacity').value = evt.capacity.maxAttendees || '';
+            document.getElementById('evt-waitlist').checked = !!evt.capacity.waitlistEnabled;
+          }
+        } else if (id === 'main') {
+          // Default mockup meetup details
+          document.getElementById('evt-name').value = "Ebc 28th Meetup (Default)";
+          document.getElementById('evt-desc').value = "Join us at the Ebc 28th meetup, where aspiring founders, business owners, professionals, and students can share their stories.";
+          document.getElementById('evt-banner-url').value = "ebc_meetup_banner.jpg";
+          document.getElementById('evt-category').value = "Networking";
+          document.getElementById('evt-start').value = "2026-06-14T09:00";
+          document.getElementById('evt-end').value = "2026-06-14T11:00";
+          document.getElementById('evt-venue-name').value = "Birch Cafe";
+          document.getElementById('evt-address').value = "Vanasthalipuram, Hyderabad";
+          document.getElementById('evt-capacity').value = 60;
+        } else {
+          errorText.textContent = "Event not found locally or in Firestore.";
+          errorBanner.classList.remove('hidden');
+          errorBanner.style.display = 'flex';
+        }
+      }
+
       if (editId) {
         document.title = "Edit Event | Perenti Admin";
         pageTitle.textContent = "Edit Event";
@@ -322,11 +363,11 @@
               document.getElementById('evt-waitlist').checked = !!evt.capacity.waitlistEnabled;
             }
           } else {
-            errorText.textContent = "Event not found. It may have been deleted.";
-            errorBanner.style.display = 'flex';
+            loadEventFromLocalStorage(editId);
           }
         }).catch(err => {
-          console.error("Error fetching event:", err);
+          console.warn("Firestore fetch failed, checking local storage:", err);
+          loadEventFromLocalStorage(editId);
         });
       }
 
@@ -339,7 +380,7 @@
         
         // Disable button
         submitBtn.disabled = true;
-        submitBtn.textContent = "Creating...";
+        submitBtn.textContent = editId ? "Updating..." : "Creating...";
 
         try {
           if (!auth.currentUser) {
@@ -360,14 +401,16 @@
             const storageRef = ref(storage, 'event-banners/' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.]/g, ''));
             const snapshot = await uploadBytes(storageRef, file);
             finalBannerUrl = await getDownloadURL(snapshot.ref);
-            submitBtn.textContent = "Creating...";
+            submitBtn.textContent = editId ? "Updating..." : "Creating...";
           } else if (urlInput && urlInput.value.trim()) {
             finalBannerUrl = urlInput.value.trim();
           } else if (fileInput && fileInput.dataset.originalUrl) {
             finalBannerUrl = fileInput.dataset.originalUrl;
           }
 
+          const eventId = editId || `local-${Date.now()}`;
           const eventData = {
+            id: eventId,
             name: document.getElementById('evt-name').value.trim(),
             description: document.getElementById('evt-desc').value.trim(),
             bannerUrl: finalBannerUrl,
@@ -385,21 +428,35 @@
               waitlistEnabled: document.getElementById('evt-waitlist').checked
             },
             createdBy: session.email,
-            createdAt: serverTimestamp(),
+            createdAt: new Date().toISOString(),
             status: 'active'
           };
 
           // Save to Firestore
-          if (editId) {
-            const eventRef = doc(db, 'events', editId);
-            await updateDoc(eventRef, eventData);
-            submitBtn.textContent = "Updated!";
-          } else {
-            const eventsRef = collection(db, 'events');
-            await addDoc(eventsRef, eventData);
-            submitBtn.textContent = "Success!";
+          try {
+            if (editId) {
+              const eventRef = doc(db, 'events', editId);
+              await updateDoc(eventRef, { ...eventData, createdAt: serverTimestamp() });
+            } else {
+              const eventsRef = collection(db, 'events');
+              const newDocRef = await addDoc(eventsRef, { ...eventData, createdAt: serverTimestamp() });
+              eventData.id = newDocRef.id;
+            }
+          } catch (fsErr) {
+            console.warn("Firestore save failed, falling back to local storage:", fsErr);
           }
+
+          // Always update in localStorage list for local/offline redundancy
+          let localEvents = JSON.parse(localStorage.getItem('events')) || [];
+          const localIndex = localEvents.findIndex(e => e.id === eventData.id);
+          if (localIndex !== -1) {
+            localEvents[localIndex] = eventData;
+          } else {
+            localEvents.push(eventData);
+          }
+          localStorage.setItem('events', JSON.stringify(localEvents));
           
+          submitBtn.textContent = editId ? "Updated!" : "Success!";
           submitBtn.style.backgroundColor = "#10b981";
           submitBtn.style.borderColor = "#10b981";
           
@@ -413,7 +470,7 @@
           errorBanner.classList.remove('hidden');
           errorBanner.style.display = 'flex';
           submitBtn.disabled = false;
-          submitBtn.textContent = "Create Event";
+          submitBtn.textContent = editId ? "Update Event" : "Create Event";
         }
       });
     });

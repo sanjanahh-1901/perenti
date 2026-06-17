@@ -980,8 +980,27 @@ document.addEventListener('DOMContentLoaded', () => {
         tickets.push(docSnap.data());
       });
     } catch (e) {
-      console.error("Error fetching attendees list", e);
+      console.warn("Firestore tickets load failed in attendee list, using local storage:", e);
     }
+
+    // Merge with local storage tickets using correct precedence (local updates override remote)
+    const localTickets = JSON.parse(localStorage.getItem('tickets')) || [];
+    localTickets.forEach(localT => {
+      const matchIdx = tickets.findIndex(t => t.id === localT.id);
+      if (matchIdx !== -1) {
+        if (localT.approval) {
+          tickets[matchIdx].approval = localT.approval;
+        }
+        if (localT.status) {
+          tickets[matchIdx].status = localT.status;
+        }
+        if (localT.timestamp) {
+          tickets[matchIdx].timestamp = localT.timestamp;
+        }
+      } else {
+        tickets.push(localT);
+      }
+    });
 
     // Group tickets by email to list unique attendees
     const attendeesMap = new Map();

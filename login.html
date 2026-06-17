@@ -217,6 +217,8 @@
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 await handleSuccessfulLogin(userCredential.user.email);
               } catch (createError) {
+                console.error("Detailed Auth Error:", authError.code, authError.message);
+                console.error("Detailed Create Error:", createError.code, createError.message);
                 console.warn("Admin authentication & creation failed. Falling back to unauthenticated bypass. YOU WILL NOT BE ABLE TO CREATE EVENTS due to Firebase Security Rules.");
                 await handleSuccessfulLogin(email);
               }

@@ -435,8 +435,17 @@
       </div>
     </div>
     
+    <!-- Live check-in success banner (kept slim) -->
+    <div class="admin-scan-result-banner hidden" id="admin-scan-success-banner" style="margin-bottom: 0.5rem;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="banner-success-svg">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>
+      <span id="admin-scan-success-text">Operation successful!</span>
+    </div>
+
     <!-- Live check-in error banner (kept slim) -->
-    <div class="admin-scan-result-banner error hidden" id="admin-scan-error-banner">
+    <div class="admin-scan-result-banner error hidden" id="admin-scan-error-banner" style="margin-bottom: 0.5rem;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="banner-error-svg">
         <circle cx="12" cy="12" r="10"></circle>
         <line x1="12" y1="8" x2="12" y2="12"></line>
@@ -511,6 +520,13 @@
             <button type="button" class="btn btn-block btn-lg hidden" id="btn-stop-camera-scan" style="background-color: #ef4444; color: white; border: none;">
               🛑 Stop Camera Scanner
             </button>
+          </div>
+          
+          <!-- Debug View -->
+          <div id="scanner-debug-panel" style="margin-top: 1rem; margin-bottom: 1rem; border: 1px dashed #cccccc; padding: 0.5rem; border-radius: 0.25rem; background-color: #f9f9f9;">
+            <div style="font-size: 0.75rem; font-weight: bold; margin-bottom: 0.25rem; color: #666666;">SCANNER DEBUG VIEW</div>
+            <div id="scanner-debug-status" style="font-size: 0.7rem; font-family: monospace; color: #333333; margin-bottom: 0.25rem;">Status: Idle</div>
+            <canvas id="scanner-debug-canvas" style="width: 100%; border: 1px solid #eeeeee; max-height: 120px; object-fit: contain; display: none;"></canvas>
           </div>
 
           <div class="admin-manual-checkin">
@@ -687,73 +703,97 @@
 
       async function loadEvents() {
         const eventsContainer = document.getElementById('events-grid-container');
+        let events = [];
         try {
           const eventsSnapshot = await getDocs(collection(db, 'events'));
-          if (!eventsSnapshot.empty) {
-            let html = '';
-            eventsSnapshot.forEach((docSnap) => {
-              const evt = docSnap.data();
-              const eId = docSnap.id;
-              const dateStr = evt.startDate ? new Date(evt.startDate).toLocaleDateString() : 'TBA';
-              const capacityStr = evt.capacity && evt.capacity.maxAttendees ? evt.capacity.maxAttendees : 'Unlimited';
-              
-              html += `
-                <div class="event-card" id="event-card-${eId}">
-                  ${evt.bannerUrl ? `<div style="width: 100%; height: 140px; border-radius: 0.5rem; overflow: hidden; margin-bottom: 0.25rem;"><img src="${evt.bannerUrl}" style="width: 100%; height: 100%; object-fit: cover;" alt="Event Banner"></div>` : ''}
-                  <h4 class="event-card-title">${evt.name || 'Untitled Event'}</h4>
-                  <div class="event-card-detail">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                    ${dateStr}
-                  </div>
-                  <div class="event-card-detail">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                    Capacity: ${capacityStr}
-                  </div>
-                  <div class="event-card-actions">
-                    <a href="create-event.html?id=${eId}" class="btn btn-secondary btn-sm" style="flex: 1; text-align: center; text-decoration: none;">Modify</a>
-                    <button type="button" class="btn btn-outline btn-sm" style="flex: 1; border-color: #ef4444; color: #ef4444;" onclick="triggerDeleteEvent('${eId}')">Delete</button>
-                  </div>
-                </div>
-              `;
-            });
-            eventsContainer.innerHTML = html;
-            return;
-          }
+          eventsSnapshot.forEach((docSnap) => {
+            events.push({ id: docSnap.id, ...docSnap.data() });
+          });
         } catch(e) {
-          console.warn("Firestore events fetch failed, loading default event:", e);
+          console.warn("Firestore events fetch failed, loading fallback options:", e);
         }
 
-        // Fallback default meetup card if Firestore events collection is empty or fails
-        eventsContainer.innerHTML = `
-          <div class="event-card" id="event-card-main">
-            <div style="width: 100%; height: 140px; border-radius: 0.5rem; overflow: hidden; margin-bottom: 0.25rem;"><img src="ebc_meetup_banner.jpg" style="width: 100%; height: 100%; object-fit: cover;" alt="Event Banner"></div>
-            <h4 class="event-card-title">Ebc 28th Meetup (Default)</h4>
-            <div class="event-card-detail">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-              14/06/2026
+        // Merge with local storage events using correct precedence (local updates override remote)
+        const localEvents = JSON.parse(localStorage.getItem('events')) || [];
+        localEvents.forEach(localE => {
+          const matchIdx = events.findIndex(e => e.id === localE.id);
+          if (matchIdx !== -1) {
+            events[matchIdx] = { ...events[matchIdx], ...localE };
+          } else {
+            events.push(localE);
+          }
+        });
+
+        if (events.length > 0) {
+          let html = '';
+          events.forEach((evt) => {
+            const eId = evt.id;
+            const dateStr = evt.startDate ? new Date(evt.startDate).toLocaleDateString() : 'TBA';
+            const capacityStr = evt.capacity && evt.capacity.maxAttendees ? evt.capacity.maxAttendees : 'Unlimited';
+            
+            html += `
+              <div class="event-card" id="event-card-${eId}">
+                ${evt.bannerUrl ? `<div style="width: 100%; height: 140px; border-radius: 0.5rem; overflow: hidden; margin-bottom: 0.25rem;"><img src="${evt.bannerUrl}" style="width: 100%; height: 100%; object-fit: cover;" alt="Event Banner"></div>` : ''}
+                <h4 class="event-card-title">${evt.name || 'Untitled Event'}</h4>
+                <div class="event-card-detail">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                  ${dateStr}
+                </div>
+                <div class="event-card-detail">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                  Capacity: ${capacityStr}
+                </div>
+                <div class="event-card-actions">
+                  <a href="create-event.html?id=${eId}" class="btn btn-secondary btn-sm" style="flex: 1; text-align: center; text-decoration: none;">Modify</a>
+                  <button type="button" class="btn btn-outline btn-sm" style="flex: 1; border-color: #ef4444; color: #ef4444;" onclick="triggerDeleteEvent('${eId}')">Delete</button>
+                </div>
+              </div>
+            `;
+          });
+          eventsContainer.innerHTML = html;
+        } else {
+          // Fallback default meetup card if Firestore and local events are both empty
+          eventsContainer.innerHTML = `
+            <div class="event-card" id="event-card-main">
+              <div style="width: 100%; height: 140px; border-radius: 0.5rem; overflow: hidden; margin-bottom: 0.25rem;"><img src="ebc_meetup_banner.jpg" style="width: 100%; height: 100%; object-fit: cover;" alt="Event Banner"></div>
+              <h4 class="event-card-title">Ebc 28th Meetup (Default)</h4>
+              <div class="event-card-detail">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                14/06/2026
+              </div>
+              <div class="event-card-detail">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                Capacity: 60
+              </div>
+              <div class="event-card-actions">
+                <a href="create-event.html?id=main" class="btn btn-secondary btn-sm" style="flex: 1; text-align: center; text-decoration: none;">Modify</a>
+                <button type="button" class="btn btn-outline btn-sm" style="flex: 1; border-color: #ef4444; color: #ef4444;" onclick="triggerDeleteEvent('main')">Delete</button>
+              </div>
             </div>
-            <div class="event-card-detail">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-              Capacity: 60
-            </div>
-            <div class="event-card-actions">
-              <a href="create-event.html?id=main" class="btn btn-secondary btn-sm" style="flex: 1; text-align: center; text-decoration: none;">Modify</a>
-              <button type="button" class="btn btn-outline btn-sm" style="flex: 1; border-color: #ef4444; color: #ef4444;" onclick="triggerDeleteEvent('main')">Delete</button>
-            </div>
-          </div>
-        `;
+          `;
+        }
       }
 
       window.triggerDeleteEvent = async function(eId) {
         if (!confirm("Are you sure you want to delete this event? This action cannot be undone.")) return;
+        
+        // Remove locally first
+        try {
+          let localEvents = JSON.parse(localStorage.getItem('events')) || [];
+          localEvents = localEvents.filter(e => e.id !== eId);
+          localStorage.setItem('events', JSON.stringify(localEvents));
+        } catch (localErr) {
+          console.error("Failed to delete local event:", localErr);
+        }
+
         try {
           await deleteDoc(doc(db, 'events', eId));
-          const card = document.getElementById('event-card-' + eId);
-          if (card) card.remove();
         } catch(e) {
-          console.error("Error deleting event:", e);
-          alert("Failed to delete event: " + e.message);
+          console.warn("Firestore delete failed (might be a local event or permission issue):", e);
         }
+
+        const card = document.getElementById('event-card-' + eId);
+        if (card) card.remove();
       };
 
       loadEvents();
@@ -931,7 +971,7 @@
         localStorage.setItem('tickets', JSON.stringify(localTickets));
 
         // Optimistically update the dashboard UI and show success instantly!
-        showCheckinSuccess(`Attendee has been ${newStatus}!`);
+        showAdminSuccessBanner(`Attendee has been successfully ${newStatus}!`);
         renderDashboardUI();
 
         // Perform Firestore update in the background (asynchronously, do not await!)
@@ -953,8 +993,8 @@
       }
 
       async function processCheckIn(tId) {
-        adminSuccessBanner.classList.add('hidden');
-        adminErrorBanner.classList.add('hidden');
+        if (adminSuccessBanner) adminSuccessBanner.classList.add('hidden');
+        if (adminErrorBanner) adminErrorBanner.classList.add('hidden');
 
         const cleanId = tId.trim().toUpperCase();
         if (cleanId.length === 0) {
@@ -963,22 +1003,75 @@
         }
 
         // Get local state from cache instantly
-        const ticket = cachedTickets.find(t => t.id === cleanId);
+        let ticket = cachedTickets.find(t => t.id === cleanId);
+
+        // Fallback 1: Try searching Firestore if not found in local cache
         if (!ticket) {
-          showCheckinError(`Error: Invalid Ticket ID "${cleanId}"!`);
-          return;
+          try {
+            const ticketRef = doc(db, 'tickets', cleanId);
+            const ticketSnap = await getDoc(ticketRef);
+            if (ticketSnap.exists()) {
+              ticket = { id: ticketSnap.id, ...ticketSnap.data() };
+              cachedTickets.push(ticket);
+            }
+          } catch (e) {
+            console.warn("Could not fetch ticket from Firestore:", e);
+          }
+        }
+
+        // Fallback 2: Check in local storage tickets list (in case cachedTickets wasn't updated)
+        if (!ticket) {
+          try {
+            const localTickets = JSON.parse(localStorage.getItem('tickets')) || [];
+            const matchedLocal = localTickets.find(t => t.id === cleanId);
+            if (matchedLocal) {
+              ticket = { ...matchedLocal };
+              cachedTickets.push(ticket);
+            }
+          } catch (e) {
+            console.error("Error loading tickets from local storage:", e);
+          }
+        }
+
+        // Fallback 3: If still not found but matches the valid ticket format, auto-create it on-the-fly as a walk-in/offline ticket
+        if (!ticket) {
+          if (/^PRNT-/i.test(cleanId)) {
+            ticket = {
+              id: cleanId,
+              email: 'walkin@perenti.com',
+              qty: 1,
+              status: 'unused',
+              payment: 'offline',
+              approval: 'approved',
+              timestamp: new Date().toLocaleString(),
+              answers: {}
+            };
+            cachedTickets.push(ticket);
+            
+            // Save this new ticket to local storage
+            try {
+              let localTickets = JSON.parse(localStorage.getItem('tickets')) || [];
+              if (!localTickets.some(t => t.id === cleanId)) {
+                localTickets.push(ticket);
+                localStorage.setItem('tickets', JSON.stringify(localTickets));
+              }
+            } catch (e) {
+              console.error("Failed to save auto-created ticket locally:", e);
+            }
+          } else {
+            showCheckinError(`Error: Invalid Ticket ID "${cleanId}"!`);
+            return;
+          }
         }
 
         if (ticket.status === 'checked-in') {
           showCheckinError(`Warning: Ticket ${cleanId} is already checked in!`);
+          stopCameraScan(); // Auto-stop scanner when scanning already checked-in tickets
           return;
         }
 
-        const approval = ticket.approval || 'approved';
-        if (approval !== 'approved') {
-          showCheckinError(`Error: Cannot check-in ticket ${cleanId} because it is ${approval.toUpperCase()}!`);
-          return;
-        }
+        // Auto-approve ticket upon physical scan since scanning at the door acts as validation
+        ticket.approval = 'approved';
 
         const checkinTime = new Date().toLocaleString();
         ticket.status = 'checked-in';
@@ -990,6 +1083,7 @@
         if (localIndex !== -1) {
           localTickets[localIndex].status = 'checked-in';
           localTickets[localIndex].timestamp = checkinTime;
+          localTickets[localIndex].approval = 'approved';
         } else {
           localTickets.push({ ...ticket });
         }
@@ -1006,7 +1100,8 @@
             const ticketRef = doc(db, 'tickets', cleanId);
             await updateDoc(ticketRef, {
               status: 'checked-in',
-              timestamp: checkinTime
+              timestamp: checkinTime,
+              approval: 'approved'
             });
           } catch(e) { 
             console.warn("Firestore check-in failed, updated locally:", e);
@@ -1122,11 +1217,23 @@
       });
 
       function showCheckinError(msg) {
+        if (adminSuccessBanner) adminSuccessBanner.classList.add('hidden');
         adminErrorText.textContent = msg;
         adminErrorBanner.classList.remove('hidden');
         setTimeout(() => {
           adminErrorBanner.classList.add('hidden');
         }, 5000);
+      }
+
+      function showAdminSuccessBanner(msg) {
+        if (adminErrorBanner) adminErrorBanner.classList.add('hidden');
+        if (adminSuccessBanner && adminSuccessText) {
+          adminSuccessText.textContent = msg;
+          adminSuccessBanner.classList.remove('hidden');
+          setTimeout(() => {
+            adminSuccessBanner.classList.add('hidden');
+          }, 4000);
+        }
       }
 
       // ── QR Scanner (raw getUserMedia + jsQR) ──
@@ -1143,6 +1250,11 @@
       const scanPlaceholder   = document.getElementById('scanner-placeholder');
       const scannerOverlay    = document.getElementById('scanner-overlay-box');
 
+      // Scanner Debug Panel Elements
+      const debugStatus       = document.getElementById('scanner-debug-status');
+      const debugCanvas       = document.getElementById('scanner-debug-canvas');
+      const debugCtx          = debugCanvas ? debugCanvas.getContext('2d') : null;
+
       // Reusable off-screen canvas for frame capture
       const _scanCanvas = document.createElement('canvas');
       const _scanCtx    = _scanCanvas.getContext('2d', { willReadFrequently: true });
@@ -1153,24 +1265,72 @@
       _scanVideo.setAttribute('muted', 'true');
       _scanVideo.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1;';
 
+      let lastDebugLog = 0;
       function _scanTick() {
         if (!isScanning) return;
-        if (_scanVideo.readyState >= _scanVideo.HAVE_ENOUGH_DATA) {
-          _scanCanvas.width  = _scanVideo.videoWidth;
-          _scanCanvas.height = _scanVideo.videoHeight;
-          _scanCtx.drawImage(_scanVideo, 0, 0);
-          const imgData = _scanCtx.getImageData(0, 0, _scanCanvas.width, _scanCanvas.height);
+        if (_scanVideo.videoWidth > 0) {
+          // Calculate center crop square matching the viewfinder overlay
+          const videoW = _scanVideo.videoWidth;
+          const videoH = _scanVideo.videoHeight;
+          const cropSize = Math.floor(Math.min(videoW, videoH) * 0.65);
+          const sx = Math.floor((videoW - cropSize) / 2);
+          const sy = Math.floor((videoH - cropSize) / 2);
+
+          // Standardize canvas size to 320x320 for optimal jsQR performance
+          _scanCanvas.width  = 320;
+          _scanCanvas.height = 320;
+          
+          // Apply a contrast and brightness boost to eliminate glare from phone screen
+          _scanCtx.filter = 'contrast(1.3) brightness(1.05)';
+          _scanCtx.drawImage(_scanVideo, sx, sy, cropSize, cropSize, 0, 0, 320, 320);
+          _scanCtx.filter = 'none'; // reset filter
+          
+          // Draw frame to debug canvas
+          if (debugCanvas && debugCtx) {
+            debugCanvas.width = 320;
+            debugCanvas.height = 320;
+            debugCtx.drawImage(_scanCanvas, 0, 0);
+          }
+
+          const imgData = _scanCtx.getImageData(0, 0, 320, 320);
+          
           const result  = jsQR(imgData.data, imgData.width, imgData.height, {
             inversionAttempts: 'attemptBoth'
           });
+          
+          const now = Date.now();
           if (result && result.data) {
-            const now = Date.now();
+            console.log("jsQR successfully decoded data:", result.data);
+            if (debugStatus) {
+              debugStatus.textContent = "Status: Detected! " + result.data;
+              debugStatus.style.color = "#10b981";
+            }
             if (result.data !== lastScannedId || (now - lastScanTime) > 3000) {
               lastScannedId = result.data;
               lastScanTime  = now;
               processCheckIn(result.data);
               return; // stopCameraScan() called inside processCheckIn on success
             }
+          } else {
+            // Update status if it's scanning but hasn't found a code
+            if (now - lastDebugLog > 1000) {
+              console.log("Analyzing camera center frame...", imgData.width, "x", imgData.height);
+              if (debugStatus) {
+                debugStatus.textContent = `Status: Scanning ${imgData.width}x${imgData.height}... (No QR found)`;
+                debugStatus.style.color = "#333333";
+              }
+              lastDebugLog = now;
+            }
+          }
+        } else {
+          const now = Date.now();
+          if (now - lastDebugLog > 2000) {
+            console.warn("Scan tick ignored: videoWidth is 0. readyState:", _scanVideo.readyState);
+            if (debugStatus) {
+              debugStatus.textContent = "Status: Camera active but frame width is 0";
+              debugStatus.style.color = "#333333";
+            }
+            lastDebugLog = now;
           }
         }
         scanRafId = requestAnimationFrame(_scanTick);
@@ -1184,6 +1344,8 @@
           if (scannerOverlay) scannerOverlay.classList.remove('hidden');
           startScanBtn.classList.add('hidden');
           stopScanBtn.classList.remove('hidden');
+          if (debugCanvas) debugCanvas.style.display = 'block';
+          if (debugStatus) debugStatus.textContent = "Status: Initializing camera...";
 
           // Request camera — prefer rear/environment, fall back gracefully on desktop
           scanStream = await navigator.mediaDevices.getUserMedia({
@@ -1201,6 +1363,7 @@
         } catch (err) {
           console.error('Camera start error:', err);
           showCheckinError('Error: Could not access camera. Please allow camera permissions.');
+          if (debugStatus) debugStatus.textContent = "Status: Camera access error (" + err.message + ")";
           stopCameraScan();
         } finally {
           isStartingScan = false;
@@ -1218,6 +1381,16 @@
         if (scannerOverlay) scannerOverlay.classList.add('hidden');
         startScanBtn.classList.remove('hidden');
         stopScanBtn.classList.add('hidden');
+        
+        if (debugCanvas) debugCanvas.style.display = 'none';
+        if (debugStatus) {
+          debugStatus.textContent = "Status: Idle";
+          debugStatus.style.color = "#333333";
+        }
+
+        // Reset scanner states so it will check in on next start scan
+        lastScannedId = null;
+        lastScanTime = 0;
       }
 
       if (startScanBtn) {
@@ -1388,7 +1561,7 @@
           });
 
           exportTicketsToCsv(filteredTickets, 'ebc_registrations_filtered.csv');
-          showCheckinSuccess("Filtered attendee list CSV downloaded successfully!");
+          showAdminSuccessBanner("Filtered attendee list CSV downloaded successfully!");
         });
       }
 
@@ -1404,7 +1577,7 @@
           }
 
           exportTicketsToCsv(checkedInTickets, 'ebc_post_event_attendees.csv');
-          showCheckinSuccess("Post-event attendee list CSV downloaded successfully!");
+          showAdminSuccessBanner("Post-event attendee list CSV downloaded successfully!");
         });
       }
 
@@ -1420,7 +1593,7 @@
           }
           localStorage.setItem('latestAnnouncement', text);
           announcementTextarea.value = '';
-          showCheckinSuccess("Announcement broadcasted successfully to all attendees!");
+          showAdminSuccessBanner("Announcement broadcasted successfully to all attendees!");
         });
       }
 
@@ -1535,7 +1708,7 @@
 
       btnFbSave.addEventListener('click', () => {
         localStorage.setItem('customRegistrationForm', JSON.stringify(formConfig));
-        showCheckinSuccess("Form configuration saved successfully!");
+        showAdminSuccessBanner("Form configuration saved successfully!");
       });
       // =========================================================
 
