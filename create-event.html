@@ -153,13 +153,16 @@
           <textarea id="evt-desc" class="form-control" rows="4" required placeholder="Provide a brief description of what attendees can expect..."></textarea>
         </div>
 
-        <div class="grid-2-col">
-          <div class="form-group">
-            <label for="evt-banner" class="form-label">Event Banner URL</label>
-            <input type="url" id="evt-banner" class="form-control" placeholder="https://example.com/image.jpg">
+        <div class="form-group">
+          <label class="form-label">Event Banner (Upload OR URL)</label>
+          <div class="grid-2-col" style="gap: 1rem;">
+            <input type="file" id="evt-banner-file" class="form-control" accept="image/*" style="padding: 0.55rem 1rem;" title="Upload Image">
+            <input type="url" id="evt-banner-url" class="form-control" placeholder="Or paste image URL here">
           </div>
-          <div class="form-group">
-            <label for="evt-category" class="form-label">Event Category <span style="color: #ef4444;">*</span></label>
+        </div>
+
+        <div class="form-group">
+          <label for="evt-category" class="form-label">Event Category <span style="color: #ef4444;">*</span></label>
             <select id="evt-category" class="form-control" required style="appearance: none; background-image: url('data:image/svg+xml;utf8,<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2364748b\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><polyline points=\'6 9 12 15 18 9\'></polyline></svg>'); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 1rem; padding-right: 2.5rem;">
               <option value="" disabled selected>Select Category</option>
               <option value="Startup">Startup</option>
@@ -170,7 +173,6 @@
               <option value="Community">Community</option>
               <option value="Other">Other</option>
             </select>
-          </div>
         </div>
       </div>
 
@@ -246,8 +248,10 @@
   </main>
 
   <script type="module">
-    import { auth, db } from './firebase-config.js';
-    import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+    import { auth, db, storage } from './firebase-config.js';
+    import { collection, doc, getDoc, updateDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+    import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-storage.js";
+    import { signInAnonymously } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
     document.addEventListener('DOMContentLoaded', () => {
       // 1. Auth / Admin Check
@@ -277,16 +281,60 @@
         });
       }
 
-      // 2. Form Submission
+      // 2. Edit Mode Initialization
+      const urlParams = new URLSearchParams(window.location.search);
+      const editId = urlParams.get('id');
+      const pageTitle = document.querySelector('.admin-title-section h1');
+      const pageSubtitle = document.querySelector('.admin-title-section p');
+      
       const form = document.getElementById('create-event-form');
       const submitBtn = document.getElementById('btn-submit-event');
       const errorBanner = document.getElementById('create-error-banner');
       const errorText = document.getElementById('create-error-text');
 
+      if (editId) {
+        document.title = "Edit Event | Perenti Admin";
+        pageTitle.textContent = "Edit Event";
+        pageSubtitle.textContent = "Modify the details, date, venue, and capacity for this event.";
+        submitBtn.textContent = "Update Event";
+        
+        // Fetch event data
+        getDoc(doc(db, 'events', editId)).then(docSnap => {
+          if (docSnap.exists()) {
+            const evt = docSnap.data();
+            document.getElementById('evt-name').value = evt.name || '';
+            document.getElementById('evt-desc').value = evt.description || '';
+            if (evt.bannerUrl) {
+              document.getElementById('evt-banner-url').value = evt.bannerUrl;
+              document.getElementById('evt-banner-file').dataset.originalUrl = evt.bannerUrl;
+            }
+            document.getElementById('evt-category').value = evt.category || '';
+            document.getElementById('evt-start').value = evt.startDate || '';
+            document.getElementById('evt-end').value = evt.endDate || '';
+            document.getElementById('evt-deadline').value = evt.registrationDeadline || '';
+            if (evt.venue) {
+              document.getElementById('evt-venue-name').value = evt.venue.name || '';
+              document.getElementById('evt-address').value = evt.venue.address || '';
+              document.getElementById('evt-maps-link').value = evt.venue.mapsLink || '';
+            }
+            if (evt.capacity) {
+              document.getElementById('evt-capacity').value = evt.capacity.maxAttendees || '';
+              document.getElementById('evt-waitlist').checked = !!evt.capacity.waitlistEnabled;
+            }
+          } else {
+            errorText.textContent = "Event not found. It may have been deleted.";
+            errorBanner.style.display = 'flex';
+          }
+        }).catch(err => {
+          console.error("Error fetching event:", err);
+        });
+      }
+
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         // Hide error
+        errorBanner.classList.add('hidden');
         errorBanner.style.display = 'none';
         
         // Disable button
@@ -294,10 +342,35 @@
         submitBtn.textContent = "Creating...";
 
         try {
+          if (!auth.currentUser) {
+            try {
+              await signInAnonymously(auth);
+            } catch (e) {
+              console.warn("Anonymous auth fallback failed:", e);
+            }
+          }
+
+          let finalBannerUrl = '';
+          const fileInput = document.getElementById('evt-banner-file');
+          const urlInput = document.getElementById('evt-banner-url');
+          
+          if (fileInput && fileInput.files && fileInput.files[0]) {
+            const file = fileInput.files[0];
+            submitBtn.textContent = "Uploading image...";
+            const storageRef = ref(storage, 'event-banners/' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.]/g, ''));
+            const snapshot = await uploadBytes(storageRef, file);
+            finalBannerUrl = await getDownloadURL(snapshot.ref);
+            submitBtn.textContent = "Creating...";
+          } else if (urlInput && urlInput.value.trim()) {
+            finalBannerUrl = urlInput.value.trim();
+          } else if (fileInput && fileInput.dataset.originalUrl) {
+            finalBannerUrl = fileInput.dataset.originalUrl;
+          }
+
           const eventData = {
             name: document.getElementById('evt-name').value.trim(),
             description: document.getElementById('evt-desc').value.trim(),
-            bannerUrl: document.getElementById('evt-banner').value.trim(),
+            bannerUrl: finalBannerUrl,
             category: document.getElementById('evt-category').value,
             startDate: document.getElementById('evt-start').value,
             endDate: document.getElementById('evt-end').value,
@@ -317,11 +390,16 @@
           };
 
           // Save to Firestore
-          const eventsRef = collection(db, 'events');
-          const docRef = await addDoc(eventsRef, eventData);
+          if (editId) {
+            const eventRef = doc(db, 'events', editId);
+            await updateDoc(eventRef, eventData);
+            submitBtn.textContent = "Updated!";
+          } else {
+            const eventsRef = collection(db, 'events');
+            await addDoc(eventsRef, eventData);
+            submitBtn.textContent = "Success!";
+          }
           
-          // Show success and redirect
-          submitBtn.textContent = "Success!";
           submitBtn.style.backgroundColor = "#10b981";
           submitBtn.style.borderColor = "#10b981";
           
@@ -332,6 +410,7 @@
         } catch (error) {
           console.error("Error creating event:", error);
           errorText.textContent = "Failed to create event. " + error.message;
+          errorBanner.classList.remove('hidden');
           errorBanner.style.display = 'flex';
           submitBtn.disabled = false;
           submitBtn.textContent = "Create Event";

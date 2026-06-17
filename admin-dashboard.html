@@ -117,6 +117,49 @@
     .btn-action-checkin:hover {
       background-color: var(--brand-primary-hover);
     }
+    
+    /* Event Cards */
+    .events-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
+    .event-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s;
+    }
+    .event-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    .event-card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin: 0;
+    }
+    .event-card-detail {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .event-card-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: auto;
+      padding-top: 1rem;
+      border-top: 1px solid var(--divider);
+    }
   </style>
 </head>
 <body class="dashboard-page-wrapper">
@@ -190,6 +233,16 @@
         <line x1="12" y1="16" x2="12.01" y2="16"></line>
       </svg>
       <span id="admin-scan-error-text">Check-in failed!</span>
+    </div>
+
+    <!-- My Events Section -->
+    <div class="admin-panel-box" style="margin-bottom: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--divider); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+        <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin: 0; font-family: 'Outfit', sans-serif;">Manage Events</h3>
+      </div>
+      <div id="events-grid-container" class="events-grid">
+        <div style="color: var(--text-secondary); font-size: 0.9rem;">Loading events...</div>
+      </div>
     </div>
 
     <!-- Grid: Scanner vs. Log Search -->
@@ -333,7 +386,7 @@
 
   <script type="module">
     import { auth, db } from './firebase-config.js';
-    import { collection, doc, getDocs, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+    import { collection, doc, getDocs, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
     document.addEventListener('DOMContentLoaded', () => {
       // 1. Session boundary check
@@ -374,6 +427,79 @@
       let searchFilter = '';
       let cachedTickets = [];
 
+      async function loadEvents() {
+        const eventsContainer = document.getElementById('events-grid-container');
+        try {
+          const eventsSnapshot = await getDocs(collection(db, 'events'));
+          if (!eventsSnapshot.empty) {
+            let html = '';
+            eventsSnapshot.forEach((docSnap) => {
+              const evt = docSnap.data();
+              const eId = docSnap.id;
+              const dateStr = evt.startDate ? new Date(evt.startDate).toLocaleDateString() : 'TBA';
+              const capacityStr = evt.capacity && evt.capacity.maxAttendees ? evt.capacity.maxAttendees : 'Unlimited';
+              
+              html += `
+                <div class="event-card" id="event-card-${eId}">
+                  ${evt.bannerUrl ? `<div style="width: 100%; height: 140px; border-radius: 0.5rem; overflow: hidden; margin-bottom: 0.25rem;"><img src="${evt.bannerUrl}" style="width: 100%; height: 100%; object-fit: cover;" alt="Event Banner"></div>` : ''}
+                  <h4 class="event-card-title">${evt.name || 'Untitled Event'}</h4>
+                  <div class="event-card-detail">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    ${dateStr}
+                  </div>
+                  <div class="event-card-detail">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    Capacity: ${capacityStr}
+                  </div>
+                  <div class="event-card-actions">
+                    <a href="create-event.html?id=${eId}" class="btn btn-secondary btn-sm" style="flex: 1; text-align: center; text-decoration: none;">Modify</a>
+                    <button type="button" class="btn btn-outline btn-sm" style="flex: 1; border-color: #ef4444; color: #ef4444;" onclick="triggerDeleteEvent('${eId}')">Delete</button>
+                  </div>
+                </div>
+              `;
+            });
+            eventsContainer.innerHTML = html;
+            return;
+          }
+        } catch(e) {
+          console.warn("Firestore events fetch failed, loading default event:", e);
+        }
+
+        // Fallback default meetup card if Firestore events collection is empty or fails
+        eventsContainer.innerHTML = `
+          <div class="event-card" id="event-card-main">
+            <div style="width: 100%; height: 140px; border-radius: 0.5rem; overflow: hidden; margin-bottom: 0.25rem;"><img src="ebc_meetup_banner.jpg" style="width: 100%; height: 100%; object-fit: cover;" alt="Event Banner"></div>
+            <h4 class="event-card-title">Ebc 28th Meetup (Default)</h4>
+            <div class="event-card-detail">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              14/06/2026
+            </div>
+            <div class="event-card-detail">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              Capacity: 60
+            </div>
+            <div class="event-card-actions">
+              <a href="create-event.html?id=main" class="btn btn-secondary btn-sm" style="flex: 1; text-align: center; text-decoration: none;">Modify</a>
+              <button type="button" class="btn btn-outline btn-sm" style="flex: 1; border-color: #ef4444; color: #ef4444;" onclick="triggerDeleteEvent('main')">Delete</button>
+            </div>
+          </div>
+        `;
+      }
+
+      window.triggerDeleteEvent = async function(eId) {
+        if (!confirm("Are you sure you want to delete this event? This action cannot be undone.")) return;
+        try {
+          await deleteDoc(doc(db, 'events', eId));
+          const card = document.getElementById('event-card-' + eId);
+          if (card) card.remove();
+        } catch(e) {
+          console.error("Error deleting event:", e);
+          alert("Failed to delete event: " + e.message);
+        }
+      };
+
+      loadEvents();
+
       async function updateDashboard() {
         let tickets = [];
         try {
@@ -381,8 +507,34 @@
           querySnapshot.forEach((docSnap) => {
             tickets.push(docSnap.data());
           });
-        } catch(e) { console.error(e); }
+        } catch(e) { 
+          console.warn("Firestore tickets load failed, using local storage:", e);
+        }
+        
+        // Merge with local storage tickets using correct precedence (local updates override remote)
+        const localTickets = JSON.parse(localStorage.getItem('tickets')) || [];
+        localTickets.forEach(localT => {
+          const matchIdx = tickets.findIndex(t => t.id === localT.id);
+          if (matchIdx !== -1) {
+            if (localT.approval) {
+              tickets[matchIdx].approval = localT.approval;
+            }
+            if (localT.status) {
+              tickets[matchIdx].status = localT.status;
+            }
+            if (localT.timestamp) {
+              tickets[matchIdx].timestamp = localT.timestamp;
+            }
+          } else {
+            tickets.push(localT);
+          }
+        });
         cachedTickets = tickets;
+        renderDashboardUI();
+      }
+
+      function renderDashboardUI() {
+        const tickets = cachedTickets || [];
         
         // Calculate counts
         const total = tickets.length;
@@ -494,19 +646,52 @@
       };
 
       async function updateAttendeeApproval(tId, newStatus) {
-        try {
-          const ticketRef = doc(db, 'tickets', tId);
-          const ticketSnap = await getDoc(ticketRef);
-          if (ticketSnap.exists()) {
-            const updateData = { approval: newStatus };
-            if (newStatus === 'rejected') {
-              updateData.status = 'unused';
-            }
-            await updateDoc(ticketRef, updateData);
-            showCheckinSuccess(`Attendee has been ${newStatus}!`);
-            updateDashboard();
+        // Find ticket from cachedTickets
+        const ticketToUpdate = cachedTickets.find(t => t.id === tId);
+        if (!ticketToUpdate) {
+          showCheckinError("Error: Ticket not found!");
+          return;
+        }
+
+        // Update ticket fields in-memory cache instantly
+        ticketToUpdate.approval = newStatus;
+        if (newStatus === 'rejected') {
+          ticketToUpdate.status = 'unused';
+        }
+
+        // Update locally first (always succeeds)
+        let localTickets = JSON.parse(localStorage.getItem('tickets')) || [];
+        const localIndex = localTickets.findIndex(t => t.id === tId);
+        if (localIndex !== -1) {
+          localTickets[localIndex].approval = newStatus;
+          if (newStatus === 'rejected') {
+            localTickets[localIndex].status = 'unused';
           }
-        } catch(e) { console.error(e); }
+        } else {
+          localTickets.push({ ...ticketToUpdate });
+        }
+        localStorage.setItem('tickets', JSON.stringify(localTickets));
+
+        // Optimistically update the dashboard UI and show success instantly!
+        showCheckinSuccess(`Attendee has been ${newStatus}!`);
+        renderDashboardUI();
+
+        // Perform Firestore update in the background (asynchronously, do not await!)
+        (async () => {
+          try {
+            const ticketRef = doc(db, 'tickets', tId);
+            const ticketSnap = await getDoc(ticketRef);
+            if (ticketSnap.exists()) {
+              const updateData = { approval: newStatus };
+              if (newStatus === 'rejected') {
+                updateData.status = 'unused';
+              }
+              await updateDoc(ticketRef, updateData);
+            }
+          } catch(e) { 
+            console.warn("Firestore update failed, updated locally:", e);
+          }
+        })();
       }
 
       async function processCheckIn(tId) {
@@ -519,36 +704,55 @@
           return;
         }
 
-        try {
-          const ticketRef = doc(db, 'tickets', cleanId);
-          const ticketSnap = await getDoc(ticketRef);
-          
-          if (!ticketSnap.exists()) {
-            showCheckinError(`Error: Invalid Ticket ID "${cleanId}"!`);
-            return;
+        // Get local state from cache instantly
+        const ticket = cachedTickets.find(t => t.id === cleanId);
+        if (!ticket) {
+          showCheckinError(`Error: Invalid Ticket ID "${cleanId}"!`);
+          return;
+        }
+
+        if (ticket.status === 'checked-in') {
+          showCheckinError(`Warning: Ticket ${cleanId} is already checked in!`);
+          return;
+        }
+
+        const approval = ticket.approval || 'approved';
+        if (approval !== 'approved') {
+          showCheckinError(`Error: Cannot check-in ticket ${cleanId} because it is ${approval.toUpperCase()}!`);
+          return;
+        }
+
+        const checkinTime = new Date().toLocaleString();
+        ticket.status = 'checked-in';
+        ticket.timestamp = checkinTime;
+
+        // Update locally
+        let localTickets = JSON.parse(localStorage.getItem('tickets')) || [];
+        const localIndex = localTickets.findIndex(t => t.id === cleanId);
+        if (localIndex !== -1) {
+          localTickets[localIndex].status = 'checked-in';
+          localTickets[localIndex].timestamp = checkinTime;
+        } else {
+          localTickets.push({ ...ticket });
+        }
+        localStorage.setItem('tickets', JSON.stringify(localTickets));
+
+        // Optimistically show success and re-render table instantly!
+        showCheckinSuccess(`Check-in successful: Ticket ${cleanId} (${ticket.email})!`);
+        renderDashboardUI();
+
+        // Perform Firestore update in the background
+        (async () => {
+          try {
+            const ticketRef = doc(db, 'tickets', cleanId);
+            await updateDoc(ticketRef, {
+              status: 'checked-in',
+              timestamp: checkinTime
+            });
+          } catch(e) { 
+            console.warn("Firestore check-in failed, updated locally:", e);
           }
-
-          const ticket = ticketSnap.data();
-          if (ticket.status === 'checked-in') {
-            showCheckinError(`Warning: Ticket ${cleanId} is already checked in!`);
-            return;
-          }
-
-          const approval = ticket.approval || 'approved';
-          if (approval !== 'approved') {
-            showCheckinError(`Error: Cannot check-in ticket ${cleanId} because it is ${approval.toUpperCase()}!`);
-            return;
-          }
-
-          // Check in ticket
-          await updateDoc(ticketRef, {
-            status: 'checked-in',
-            timestamp: new Date().toLocaleString()
-          });
-
-          showCheckinSuccess(`Check-in successful: Ticket ${cleanId} (${ticket.email})!`);
-          updateDashboard();
-        } catch(e) { console.error(e); }
+        })();
       }
 
       function showCheckinSuccess(msg) {
@@ -603,11 +807,11 @@
       // Search and Filter inputs
       attendeeSearchInput.addEventListener('input', (e) => {
         searchFilter = e.target.value;
-        updateDashboard();
+        renderDashboardUI();
       });
 
-      document.getElementById('filter-status-select').addEventListener('change', updateDashboard);
-      document.getElementById('filter-approval-select').addEventListener('change', updateDashboard);
+      document.getElementById('filter-status-select').addEventListener('change', renderDashboardUI);
+      document.getElementById('filter-approval-select').addEventListener('change', renderDashboardUI);
 
       // View segment tabs styling & listeners
       const tabAll = document.getElementById('tab-all-registrations');
@@ -633,13 +837,13 @@
         tabAll.addEventListener('click', () => {
           filterStatusSelect.value = 'all';
           setActiveTab('all');
-          updateDashboard();
+          renderDashboardUI();
         });
 
         tabPostEvent.addEventListener('click', () => {
           filterStatusSelect.value = 'checked-in';
           setActiveTab('checked-in');
-          updateDashboard();
+          renderDashboardUI();
         });
 
         filterStatusSelect.addEventListener('change', (e) => {
@@ -887,8 +1091,7 @@
       const attendeeDetailsContent = document.getElementById('attendee-details-content');
 
       window.showAttendeeDetails = function(tId) {
-        const tickets = JSON.parse(localStorage.getItem('tickets')) || [];
-        const ticket = tickets.find(t => t.id === tId);
+        const ticket = cachedTickets.find(t => t.id === tId);
         if (!ticket) return;
 
         let answersHtml = '';

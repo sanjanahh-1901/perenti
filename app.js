@@ -633,8 +633,17 @@ document.addEventListener('DOMContentLoaded', () => {
           registrationSummaryModal.classList.add('hidden');
         }
         
-        const ticketIds = await bookTicketsForUser(session.email, quantity, 'offline', false);
-        showRegistrationSuccess(session.email, ticketIds);
+        try {
+          const ticketIds = await bookTicketsForUser(session.email, quantity, 'offline', false);
+          showRegistrationSuccess(session.email, ticketIds);
+        } catch (error) {
+          console.error("Error booking tickets: ", error);
+          alert("Failed to book tickets. This is likely due to missing Firestore Security Rules or Firestore Database not being enabled in your Firebase project.\n\nError details: " + error.message);
+          // Restore summary modal visibility
+          if (registrationSummaryModal) {
+            registrationSummaryModal.classList.remove('hidden');
+          }
+        }
       } else {
         window.location.href = `login.html?qty=${quantity}&payment=offline`;
       }
@@ -848,7 +857,20 @@ document.addEventListener('DOMContentLoaded', () => {
       
       try {
         await setDoc(doc(db, 'tickets', ticketIdStr), ticketData);
-      } catch(e) { console.error("Error writing ticket", e); }
+      } catch(e) {
+        console.warn("Firestore write failed, saving ticket locally:", e);
+      }
+
+      // Always save to local storage 'tickets' array for offline fallback and local testing
+      try {
+        let localTickets = JSON.parse(localStorage.getItem('tickets')) || [];
+        if (!localTickets.some(t => t.id === ticketIdStr)) {
+          localTickets.push(ticketData);
+          localStorage.setItem('tickets', JSON.stringify(localTickets));
+        }
+      } catch(localErr) {
+        console.error("Failed to save ticket locally:", localErr);
+      }
       
       newTicketIds.push(ticketIdStr);
     }
