@@ -5,6 +5,19 @@ import { collection, doc, setDoc, getDoc, updateDoc, getDocs } from "https://www
 document.addEventListener('DOMContentLoaded', () => {
 
   // ==========================================================================
+  // EmailJS Configuration Settings (Manage real email ticket delivery)
+  // ==========================================================================
+  const EMAILJS_CONFIG = {
+    enabled: true,         // Set to true to enable real email ticket delivery
+    serviceId: "service_xxxx",   // Replace with your EmailJS Service ID
+    templateId: "template_xxxx", // Replace with your EmailJS Template ID
+    publicKey: "user_xxxx"       // Replace with your EmailJS Public Key (User ID)
+  };
+
+  // Sync config with localStorage so other pages (like user dashboard) can access it
+  localStorage.setItem('emailjsConfigDefault', JSON.stringify(EMAILJS_CONFIG));
+
+  // ==========================================================================
   // Firestore Database Initialization
   // ==========================================================================
 
@@ -671,8 +684,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const successMsg = document.getElementById('success-email-msg');
     const localConfig = JSON.parse(localStorage.getItem('emailjsConfig') || '{}');
+    const isEnabled = EMAILJS_CONFIG.enabled || localConfig.enabled;
+    const hasKeys = (EMAILJS_CONFIG.serviceId && EMAILJS_CONFIG.serviceId !== 'service_xxxx') || localConfig.serviceId;
     if (successMsg) {
-      if (localConfig.enabled) {
+      if (isEnabled && hasKeys) {
         successMsg.innerHTML = `A booking confirmation containing your digital tickets has been sent to your email at <strong>${email}</strong>.`;
       } else {
         successMsg.innerHTML = `A booking confirmation containing your digital tickets has been simulated and emailed to <strong>${email}</strong>.`;
@@ -852,20 +867,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Call real EmailJS dispatch in background if configured and enabled
     (async () => {
-      let emailjsConfig = {};
-      try {
-        const configRef = doc(db, 'settings', 'emailjs');
-        const configSnap = await getDoc(configRef);
-        if (configSnap.exists()) {
-          emailjsConfig = configSnap.data();
+      let emailjsConfig = { ...EMAILJS_CONFIG };
+      
+      // If hardcoded config is empty or default, fallback to Firestore / localStorage
+      if (!emailjsConfig.serviceId || emailjsConfig.serviceId === 'service_xxxx') {
+        try {
+          const configRef = doc(db, 'settings', 'emailjs');
+          const configSnap = await getDoc(configRef);
+          if (configSnap.exists()) {
+            emailjsConfig = { ...emailjsConfig, ...configSnap.data() };
+          }
+        } catch (e) {
+          console.warn("Could not fetch emailjs config from Firestore, using localStorage:", e);
         }
-      } catch (e) {
-        console.warn("Could not fetch emailjs config from Firestore, using localStorage:", e);
+        const localConfig = JSON.parse(localStorage.getItem('emailjsConfig') || '{}');
+        emailjsConfig = { ...emailjsConfig, ...localConfig };
       }
-      const localConfig = JSON.parse(localStorage.getItem('emailjsConfig') || '{}');
-      emailjsConfig = { ...emailjsConfig, ...localConfig };
 
-      if (emailjsConfig.enabled && emailjsConfig.serviceId && emailjsConfig.templateId && emailjsConfig.publicKey) {
+      if (emailjsConfig.enabled && emailjsConfig.serviceId && emailjsConfig.templateId && emailjsConfig.publicKey && emailjsConfig.serviceId !== 'service_xxxx') {
         sendEmailJSTicket(email, newTicketIds, emailjsConfig);
       }
     })();

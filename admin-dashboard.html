@@ -598,36 +598,6 @@
           </button>
         </div>
 
-        <!-- Left: Email Settings Box -->
-        <div class="admin-panel-box" id="admin-email-settings-box">
-          <h3 class="admin-panel-title">Email Delivery Settings</h3>
-          <p class="panel-section-subtitle" style="margin-bottom: 0.75rem; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;">Configure EmailJS to send real digital ticket emails to attendees upon registration.</p>
-          
-          <div class="form-group" style="margin-bottom: 0.75rem;">
-            <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.25rem; display: block;">EmailJS Service ID</label>
-            <input type="text" id="emailjs-service-id" class="form-control" placeholder="e.g. service_xxxx" style="font-size: 0.85rem; width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border-input); background: var(--bg-card); color: var(--text-main);">
-          </div>
-          
-          <div class="form-group" style="margin-bottom: 0.75rem;">
-            <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.25rem; display: block;">EmailJS Template ID</label>
-            <input type="text" id="emailjs-template-id" class="form-control" placeholder="e.g. template_xxxx" style="font-size: 0.85rem; width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border-input); background: var(--bg-card); color: var(--text-main);">
-          </div>
-          
-          <div class="form-group" style="margin-bottom: 0.75rem;">
-            <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.25rem; display: block;">EmailJS Public Key (User ID)</label>
-            <input type="text" id="emailjs-public-key" class="form-control" placeholder="e.g. user_xxxx or public_key" style="font-size: 0.85rem; width: 100%; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid var(--border-input); background: var(--bg-card); color: var(--text-main);">
-          </div>
-
-          <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; user-select: none;">
-            <input type="checkbox" id="emailjs-enabled" style="width: 1rem; height: 1rem; cursor: pointer;">
-            <label for="emailjs-enabled" class="form-label" style="margin: 0; font-size: 0.8rem; cursor: pointer; color: var(--text-main); font-weight: 500;">Enable Real Email Delivery</label>
-          </div>
-          
-          <button type="button" class="btn btn-primary btn-block btn-lg" id="btn-save-emailjs-config" style="margin-top: 0.5rem; width: 100%;">
-            Save Email Settings
-          </button>
-        </div>
-
       </div>
 
       <!-- Right: Searchable Registrations Table -->
@@ -1741,72 +1711,6 @@
         showAdminSuccessBanner("Form configuration saved successfully!");
       });
 
-      // =========================================================
-      // EmailJS configuration settings logic
-      // =========================================================
-      const emailjsServiceIdInput = document.getElementById('emailjs-service-id');
-      const emailjsTemplateIdInput = document.getElementById('emailjs-template-id');
-      const emailjsPublicKeyInput = document.getElementById('emailjs-public-key');
-      const emailjsEnabledInput = document.getElementById('emailjs-enabled');
-      const btnSaveEmailJS = document.getElementById('btn-save-emailjs-config');
-
-      // Load config from Firestore or localStorage
-      async function loadEmailJSConfig() {
-        let config = {};
-        try {
-          const configRef = doc(db, 'settings', 'emailjs');
-          const configSnap = await getDoc(configRef);
-          if (configSnap.exists()) {
-            config = configSnap.data();
-          }
-        } catch (e) {
-          console.warn("Firestore emailjs settings load failed, using local storage:", e);
-        }
-
-        // Fallback/merge with local storage config
-        const localConfig = JSON.parse(localStorage.getItem('emailjsConfig')) || {};
-        config = { ...config, ...localConfig };
-
-        // Populate fields
-        if (emailjsServiceIdInput) emailjsServiceIdInput.value = config.serviceId || '';
-        if (emailjsTemplateIdInput) emailjsTemplateIdInput.value = config.templateId || '';
-        if (emailjsPublicKeyInput) emailjsPublicKeyInput.value = config.publicKey || '';
-        if (emailjsEnabledInput) emailjsEnabledInput.checked = !!config.enabled;
-
-        // Keep local storage in sync
-        localStorage.setItem('emailjsConfig', JSON.stringify(config));
-      }
-
-      if (btnSaveEmailJS) {
-        btnSaveEmailJS.addEventListener('click', async () => {
-          const config = {
-            serviceId: emailjsServiceIdInput.value.trim(),
-            templateId: emailjsTemplateIdInput.value.trim(),
-            publicKey: emailjsPublicKeyInput.value.trim(),
-            enabled: emailjsEnabledInput.checked
-          };
-
-          if (config.enabled && (!config.serviceId || !config.templateId || !config.publicKey)) {
-            showCheckinError("Error: All EmailJS fields are required to enable email delivery!");
-            return;
-          }
-
-          // Save locally
-          localStorage.setItem('emailjsConfig', JSON.stringify(config));
-
-          // Save to Firestore in background
-          try {
-            const configRef = doc(db, 'settings', 'emailjs');
-            await setDoc(configRef, config);
-          } catch (e) {
-            console.warn("Firestore emailjs settings save failed, saved locally:", e);
-          }
-
-          showAdminSuccessBanner("Email delivery settings saved successfully!");
-        });
-      }
-
-      loadEmailJSConfig();
       // =========================================================
       // =========================================================
 
