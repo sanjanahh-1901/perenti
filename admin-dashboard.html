@@ -1168,47 +1168,35 @@
           startScanBtn.classList.add('hidden');
           stopScanBtn.classList.remove('hidden');
 
-          // Derive a square qrbox that fits inside the viewfinder (78% of shorter side)
-          const viewfinder = document.querySelector('.scanner-viewfinder');
-          const vw = viewfinder ? viewfinder.offsetWidth  : 320;
-          const vh = viewfinder ? viewfinder.offsetHeight : 240;
-          const boxSize = Math.floor(Math.min(vw, vh) * 0.78);
-
+          // Lean config — no aspectRatio (causes constraint rejection on some webcams)
           const scanConfig = {
-            fps: 30,                                    // 3x more frames sampled per second
-            qrbox: { width: boxSize, height: boxSize }, // Focus on center region only — biggest speed gain
-            aspectRatio: vw / vh,                       // Match viewfinder ratio
-            experimentalFeatures: {
-              useBarCodeDetectorIfSupported: true         // Use native BarcodeDetector API when available
-            }
+            fps: 25,
+            qrbox: { width: 250, height: 250 }, // Fixed size aligned with visual overlay
+            experimentalFeatures: { useBarCodeDetectorIfSupported: true }
           };
 
-          // Clean up any stuck state from a previous session
+          // Tear down any previous (possibly corrupt) instance cleanly
           if (html5QrCode) {
             try { await html5QrCode.stop(); } catch (_) {}
+            html5QrCode = null;
           }
-          html5QrCode = new Html5Qrcode("qr-reader");
 
-          // Try environment (rear) camera first, then fall back to first available device
-          try {
-            await html5QrCode.start(
-              { facingMode: "environment" },
-              scanConfig,
-              onScanSuccess,
-              () => {} // Silence per-frame "no QR found" noise
-            );
-          } catch (_) {
-            // facingMode not supported (e.g. desktop single webcam) — use device ID
-            const devices = await Html5Qrcode.getCameras();
-            if (!devices || devices.length === 0) throw new Error("No camera found.");
-            html5QrCode = new Html5Qrcode("qr-reader"); // fresh instance after failed start
-            await html5QrCode.start(
-              devices[0].id,
-              scanConfig,
-              onScanSuccess,
-              () => {}
-            );
-          }
+          // Enumerate cameras first — this is the most reliable cross-platform path.
+          // getCameras() triggers the permission dialog only once, then returns device IDs
+          // that work universally (unlike facingMode which silently fails on many desktops).
+          const devices = await Html5Qrcode.getCameras();
+          if (!devices || devices.length === 0) throw new Error("No camera found.");
+
+          // Prefer back / rear / environment camera (mobile); fall back to first (desktop webcam)
+          const cam = devices.find(d => /back|rear|environment/i.test(d.label || '')) || devices[0];
+
+          html5QrCode = new Html5Qrcode("qr-reader");
+          await html5QrCode.start(
+            cam.id,
+            scanConfig,
+            onScanSuccess,
+            () => {} // Silence per-frame "no QR found" noise
+          );
 
           isScanning = true;
         } catch (err) {
