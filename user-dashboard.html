@@ -157,7 +157,7 @@
       </div>
       <div style="display: flex; gap: 0.5rem; padding-left: 2.25rem;">
         <button type="button" class="btn btn-primary btn-sm" id="btn-view-simulated-email" style="background-color: #10b981; border-color: #10b981; color: white;">
-          ✉️ View Simulated Email
+          ✉️ View Email Preview
         </button>
         <button type="button" class="btn btn-secondary btn-sm" id="btn-close-success-alert" style="background-color: transparent; border-color: #a7f3d0; color: #047857; border: 1px solid #a7f3d0;">
           Dismiss
@@ -311,6 +311,7 @@
           `;
         });
         eventsContainer.innerHTML = html;
+      }
 
       loadAvailableEvents();
 
@@ -547,12 +548,12 @@
         if (successAlert && alertEmailTarget) {
           alertEmailTarget.textContent = email;
           const successMsg = document.getElementById('booking-success-msg');
-          const emailjsConfig = JSON.parse(localStorage.getItem('emailjsConfig') || '{}');
+          const emailjsConfig = JSON.parse(localStorage.getItem('emailjsConfigDefault') || '{}');
           if (successMsg) {
             if (emailjsConfig.enabled) {
               successMsg.innerHTML = `A booking confirmation receipt containing your digital tickets has been sent to your email at <strong>${email}</strong>.`;
             } else {
-              successMsg.innerHTML = `A booking confirmation receipt containing your digital tickets has been simulated and emailed to <strong id="alert-email-target">${email}</strong>.`;
+              successMsg.innerHTML = `A booking confirmation receipt containing your digital tickets has been simulated and emailed to <strong>${email}</strong>.`;
             }
           }
           successAlert.classList.remove('hidden');
