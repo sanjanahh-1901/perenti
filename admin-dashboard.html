@@ -906,6 +906,7 @@
       // Initialize Html5Qrcode
       let html5QrCode;
       let isScanning = false;
+      let isStartingScan = false;
       let lastScannedId = null;
       let lastScanTime = 0;
 
@@ -932,7 +933,9 @@
       }
 
       async function startCameraScan() {
-        if (!html5QrCode) return;
+        if (isScanning || isStartingScan) return;
+        isStartingScan = true;
+        
         try {
           scanPlaceholder.classList.add('hidden');
           if (scannerOverlay) scannerOverlay.classList.remove('hidden');
@@ -940,7 +943,8 @@
           stopScanBtn.classList.remove('hidden');
           
           const scanConfig = {
-            fps: 15
+            fps: 10,
+            useBarCodeDetectorIfSupported: true
           };
 
           // 1. Query all available camera devices
@@ -962,41 +966,77 @@
             selectedCameraId = devices[0].id;
           }
 
-          // 3. Start scanning exactly once with the resolved device ID
-          await html5QrCode.start(
-            selectedCameraId,
-            scanConfig,
-            onScanSuccess,
-            (errorMessage) => {
-              // Ignore debug frame failures to prevent polluting console
+          // Force recreate the Html5Qrcode instance to clean up any stuck transition states from previous failed attempts
+          if (html5QrCode) {
+            try {
+              if (html5QrCode.isScanning) {
+                await html5QrCode.stop();
+              }
+            } catch (stopErr) {
+              // Ignore stop errors when resetting
             }
-          );
-          isScanning = true;
+          }
+          html5QrCode = new Html5Qrcode("qr-reader");
+
+          // 3. Try to start scanning with ideal HD constraints
+          try {
+            await html5QrCode.start(
+              {
+                deviceId: selectedCameraId,
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+              },
+              scanConfig,
+              onScanSuccess,
+              (errorMessage) => {
+                // Ignore debug frame failures to prevent polluting console
+              }
+            );
+            isScanning = true;
+          } catch (firstErr) {
+            console.warn("Failed to start camera scan with HD constraints, trying raw ID fallback:", firstErr);
+            // Re-instantiate again to completely clear the transition state
+            html5QrCode = new Html5Qrcode("qr-reader");
+            await html5QrCode.start(
+              selectedCameraId,
+              scanConfig,
+              onScanSuccess,
+              (errorMessage) => {
+                // Ignore debug frame failures to prevent polluting console
+              }
+            );
+            isScanning = true;
+          }
         } catch (err) {
           console.error("Error starting camera scan:", err);
           showCheckinError("Error: Could not access camera. Please check permissions.");
           stopCameraScan();
+        } finally {
+          isStartingScan = false;
         }
       }
 
       async function stopCameraScan() {
-        if (!html5QrCode || !isScanning) {
-          scanPlaceholder.classList.remove('hidden');
-          if (scannerOverlay) scannerOverlay.classList.add('hidden');
-          startScanBtn.classList.remove('hidden');
-          stopScanBtn.classList.add('hidden');
+        // Clear UI states regardless
+        scanPlaceholder.classList.remove('hidden');
+        if (scannerOverlay) scannerOverlay.classList.add('hidden');
+        startScanBtn.classList.remove('hidden');
+        stopScanBtn.classList.add('hidden');
+
+        if (!html5QrCode) {
+          isScanning = false;
           return;
         }
+
         try {
-          await html5QrCode.stop();
+          // Attempt to stop only if the library is currently scanning
+          if (isScanning) {
+            await html5QrCode.stop();
+          }
         } catch (err) {
           console.error("Error stopping camera scan:", err);
         } finally {
           isScanning = false;
-          scanPlaceholder.classList.remove('hidden');
-          if (scannerOverlay) scannerOverlay.classList.add('hidden');
-          startScanBtn.classList.remove('hidden');
-          stopScanBtn.classList.add('hidden');
         }
       }
 
