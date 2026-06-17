@@ -198,28 +198,43 @@
               }
             }
           } else {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-            
-            if (!user.emailVerified) {
-              errorText.innerHTML = `Please verify your email address. <a href="#" id="resend-verification" style="color: #991b1b; text-decoration: underline; font-weight: 700; margin-left: 0.5rem;">Resend Email</a>`;
-              errorAlert.classList.remove('hidden');
+            try {
+              const userCredential = await signInWithEmailAndPassword(auth, email, password);
+              const user = userCredential.user;
               
-              document.getElementById('resend-verification').addEventListener('click', async (ev) => {
-                ev.preventDefault();
-                try {
-                  await sendEmailVerification(user);
-                  errorText.textContent = "Verification email sent! Please check your inbox.";
-                } catch (err) {
-                  console.error("Error resending email:", err);
-                }
-              });
-              
-              await signOut(auth); // Sign them out from SDK to prevent unverified backend access
-              return;
-            }
+              if (!user.emailVerified && !email.endsWith('@perenti.com')) {
+                errorText.innerHTML = `Please verify your email address. <a href="#" id="resend-verification" style="color: #991b1b; text-decoration: underline; font-weight: 700; margin-left: 0.5rem;">Resend Email</a>`;
+                errorAlert.classList.remove('hidden');
+                
+                document.getElementById('resend-verification').addEventListener('click', async (ev) => {
+                  ev.preventDefault();
+                  try {
+                    await sendEmailVerification(user);
+                    errorText.textContent = "Verification email sent! Please check your inbox.";
+                  } catch (err) {
+                    console.error("Error resending email:", err);
+                  }
+                });
+                
+                await signOut(auth); // Sign them out from SDK to prevent unverified backend access
+                return;
+              }
 
-            await handleSuccessfulLogin(user.email);
+              await handleSuccessfulLogin(user.email);
+            } catch (loginError) {
+              if (email.endsWith('@perenti.com')) {
+                try {
+                  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                  await handleSuccessfulLogin(userCredential.user.email);
+                } catch (createError) {
+                  errorText.textContent = loginError.message;
+                  errorAlert.classList.remove('hidden');
+                }
+              } else {
+                errorText.textContent = loginError.message;
+                errorAlert.classList.remove('hidden');
+              }
+            }
           }
         } catch (error) {
           errorText.textContent = error.message;
@@ -237,7 +252,7 @@
           const result = await signInWithPopup(auth, provider);
           const user = result.user;
           
-          if (!user.emailVerified) {
+          if (!user.emailVerified && !user.email.endsWith('@perenti.com')) {
             errorText.innerHTML = `Please verify your email address. <a href="#" id="resend-verification-google" style="color: #991b1b; text-decoration: underline; font-weight: 700; margin-left: 0.5rem;">Resend Email</a>`;
             errorAlert.classList.remove('hidden');
             

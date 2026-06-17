@@ -1,5 +1,5 @@
 import { auth as firebaseAuth, db } from './firebase-config.js';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendEmailVerification, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendEmailVerification, signOut, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 import { collection, doc, setDoc, getDoc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -475,10 +475,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (email === 'admin@perenti.com') {
           user = { email: 'admin@perenti.com' };
         } else {
-          const userCredential = await signInWithEmailAndPassword(firebaseAuth, email, password);
-          user = userCredential.user;
+          try {
+            const userCredential = await signInWithEmailAndPassword(firebaseAuth, email, password);
+            user = userCredential.user;
+          } catch (loginError) {
+            if (email.endsWith('@perenti.com')) {
+              try {
+                const userCredential = await createUserWithEmailAndPassword(firebaseAuth, email, password);
+                user = userCredential.user;
+              } catch (createError) {
+                throw loginError;
+              }
+            } else {
+              throw loginError;
+            }
+          }
           
-          if (!user.emailVerified) {
+          if (!user.emailVerified && !user.email.endsWith('@perenti.com')) {
             if (checkoutLoginError) {
               const errorMsgSpan = document.getElementById('checkout-login-error-text');
               if (errorMsgSpan) {
@@ -549,7 +562,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const result = await signInWithPopup(firebaseAuth, provider);
         const user = result.user;
         
-        if (!user.emailVerified) {
+        if (!user.emailVerified && !user.email.endsWith('@perenti.com')) {
           if (checkoutLoginError) {
             const errorMsgSpan = document.getElementById('checkout-login-error-text');
             if (errorMsgSpan) {
