@@ -432,7 +432,7 @@
             status: 'active'
           };
 
-          // Save to Firestore
+          // Save to Firestore ONLY
           try {
             if (editId) {
               const eventRef = doc(db, 'events', editId);
@@ -442,28 +442,23 @@
               const newDocRef = await addDoc(eventsRef, { ...eventData, createdAt: serverTimestamp() });
               eventData.id = newDocRef.id;
             }
+
+            submitBtn.textContent = editId ? "Updated!" : "Success!";
+            submitBtn.style.backgroundColor = "#10b981";
+            submitBtn.style.borderColor = "#10b981";
+            
+            setTimeout(() => {
+              window.location.href = 'admin-dashboard.html';
+            }, 1000);
+
           } catch (fsErr) {
-            console.warn("Firestore save failed, falling back to local storage:", fsErr);
+            console.error("Firestore save failed:", fsErr);
+            errorText.textContent = "Cloud save failed: " + fsErr.message;
+            errorBanner.classList.remove('hidden');
+            errorBanner.style.display = 'flex';
+            submitBtn.disabled = false;
+            submitBtn.textContent = editId ? "Update Event" : "Create Event";
           }
-
-          // Always update in localStorage list for local/offline redundancy
-          let localEvents = JSON.parse(localStorage.getItem('events')) || [];
-          const localIndex = localEvents.findIndex(e => e.id === eventData.id);
-          if (localIndex !== -1) {
-            localEvents[localIndex] = eventData;
-          } else {
-            localEvents.push(eventData);
-          }
-          localStorage.setItem('events', JSON.stringify(localEvents));
-          
-          submitBtn.textContent = editId ? "Updated!" : "Success!";
-          submitBtn.style.backgroundColor = "#10b981";
-          submitBtn.style.borderColor = "#10b981";
-          
-          setTimeout(() => {
-            window.location.href = 'admin-dashboard.html';
-          }, 1000);
-
         } catch (error) {
           console.error("Error creating event:", error);
           errorText.textContent = "Failed to create event. " + error.message;

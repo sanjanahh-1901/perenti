@@ -256,19 +256,8 @@
             events.push({ id: docSnap.id, ...docSnap.data() });
           });
         } catch(e) {
-          console.warn("Firestore events load failed, loading fallback local events:", e);
+          console.error("Firestore events load failed:", e);
         }
-
-        // Merge with local storage events using correct precedence (local updates override remote)
-        const localEvents = JSON.parse(localStorage.getItem('events')) || [];
-        localEvents.forEach(localE => {
-          const matchIdx = events.findIndex(e => e.id === localE.id);
-          if (matchIdx !== -1) {
-            events[matchIdx] = { ...events[matchIdx], ...localE };
-          } else {
-            events.push(localE);
-          }
-        });
 
         if (events.length === 0) {
           eventsContainer.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.9rem;">No upcoming events found.</div>';
@@ -313,28 +302,9 @@
           querySnapshot.forEach((docSnap) => {
             userTickets.push(docSnap.data());
           });
-        } catch(e) { console.error("Error fetching user tickets", e); }
-
-        // Merge with local storage tickets using correct precedence (local updates override remote)
-        const localTickets = JSON.parse(localStorage.getItem('tickets')) || [];
-        localTickets.forEach(localT => {
-          if (localT.email === session.email) {
-            const matchIdx = userTickets.findIndex(t => t.id === localT.id);
-            if (matchIdx !== -1) {
-              if (localT.approval) {
-                userTickets[matchIdx].approval = localT.approval;
-              }
-              if (localT.status) {
-                userTickets[matchIdx].status = localT.status;
-              }
-              if (localT.timestamp) {
-                userTickets[matchIdx].timestamp = localT.timestamp;
-              }
-            } else {
-              userTickets.push(localT);
-            }
-          }
-        });
+        } catch(e) {
+          console.error("Error fetching user tickets", e);
+        }
 
         if (userTickets.length === 0) {
           emptyState.classList.remove('hidden');
@@ -446,28 +416,9 @@
           querySnapshot.forEach((docSnap) => {
             userTickets.push(docSnap.data());
           });
-        } catch(e) { console.error("Error polling tickets", e); }
-
-        // Merge with local storage tickets using correct precedence (local updates override remote)
-        const localTickets = JSON.parse(localStorage.getItem('tickets')) || [];
-        localTickets.forEach(localT => {
-          if (localT.email === session.email) {
-            const matchIdx = userTickets.findIndex(t => t.id === localT.id);
-            if (matchIdx !== -1) {
-              if (localT.approval) {
-                userTickets[matchIdx].approval = localT.approval;
-              }
-              if (localT.status) {
-                userTickets[matchIdx].status = localT.status;
-              }
-              if (localT.timestamp) {
-                userTickets[matchIdx].timestamp = localT.timestamp;
-              }
-            } else {
-              userTickets.push(localT);
-            }
-          }
-        });
+        } catch(e) {
+          console.error("Error polling tickets", e);
+        }
 
         userTickets.forEach(t => {
           const element = document.getElementById(`status-tag-${t.id}`);

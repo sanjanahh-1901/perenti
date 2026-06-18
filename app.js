@@ -839,18 +839,8 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         await setDoc(doc(db, 'tickets', ticketIdStr), ticketData);
       } catch (e) {
-        console.warn("Firestore write failed, saving ticket locally:", e);
-      }
-
-      // Always save to local storage 'tickets' array for offline fallback and local testing
-      try {
-        let localTickets = JSON.parse(localStorage.getItem('tickets')) || [];
-        if (!localTickets.some(t => t.id === ticketIdStr)) {
-          localTickets.push(ticketData);
-          localStorage.setItem('tickets', JSON.stringify(localTickets));
-        }
-      } catch (localErr) {
-        console.error("Failed to save ticket locally:", localErr);
+        console.error("Firestore write failed:", e);
+        throw new Error("Cloud save failed: " + e.message);
       }
 
       newTicketIds.push(ticketIdStr);
@@ -1128,27 +1118,8 @@ document.addEventListener('DOMContentLoaded', () => {
         tickets.push(docSnap.data());
       });
     } catch (e) {
-      console.warn("Firestore tickets load failed in attendee list, using local storage:", e);
+      console.error("Firestore tickets load failed in attendee list:", e);
     }
-
-    // Merge with local storage tickets using correct precedence (local updates override remote)
-    const localTickets = JSON.parse(localStorage.getItem('tickets')) || [];
-    localTickets.forEach(localT => {
-      const matchIdx = tickets.findIndex(t => t.id === localT.id);
-      if (matchIdx !== -1) {
-        if (localT.approval) {
-          tickets[matchIdx].approval = localT.approval;
-        }
-        if (localT.status) {
-          tickets[matchIdx].status = localT.status;
-        }
-        if (localT.timestamp) {
-          tickets[matchIdx].timestamp = localT.timestamp;
-        }
-      } else {
-        tickets.push(localT);
-      }
-    });
 
     // Group tickets by email to list unique attendees
     const attendeesMap = new Map();

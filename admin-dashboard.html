@@ -821,19 +821,8 @@
             events.push({ id: docSnap.id, ...docSnap.data() });
           });
         } catch(e) {
-          console.warn("Firestore events fetch failed, loading fallback options:", e);
+          console.error("Firestore events fetch failed:", e);
         }
-
-        // Merge with local storage events using correct precedence (local updates override remote)
-        const localEvents = JSON.parse(localStorage.getItem('events')) || [];
-        localEvents.forEach(localE => {
-          const matchIdx = events.findIndex(e => e.id === localE.id);
-          if (matchIdx !== -1) {
-            events[matchIdx] = { ...events[matchIdx], ...localE };
-          } else {
-            events.push(localE);
-          }
-        });
 
         if (events.length > 0) {
           let html = '';
@@ -888,19 +877,12 @@
       window.triggerDeleteEvent = async function(eId) {
         if (!confirm("Are you sure you want to delete this event? This action cannot be undone.")) return;
         
-        // Remove locally first
-        try {
-          let localEvents = JSON.parse(localStorage.getItem('events')) || [];
-          localEvents = localEvents.filter(e => e.id !== eId);
-          localStorage.setItem('events', JSON.stringify(localEvents));
-        } catch (localErr) {
-          console.error("Failed to delete local event:", localErr);
-        }
-
         try {
           await deleteDoc(doc(db, 'events', eId));
         } catch(e) {
-          console.warn("Firestore delete failed (might be a local event or permission issue):", e);
+          console.error("Firestore delete failed:", e);
+          alert("Failed to delete event: " + e.message);
+          return;
         }
 
         const card = document.getElementById('event-card-' + eId);
@@ -917,27 +899,8 @@
             tickets.push({ id: docSnap.id, ...docSnap.data() });
           });
         } catch(e) { 
-          console.warn("Firestore tickets load failed, using local storage:", e);
+          console.error("Firestore tickets load failed:", e);
         }
-        
-        // Merge with local storage tickets using correct precedence (local updates override remote)
-        const localTickets = JSON.parse(localStorage.getItem('tickets')) || [];
-        localTickets.forEach(localT => {
-          const matchIdx = tickets.findIndex(t => t.id === localT.id);
-          if (matchIdx !== -1) {
-            if (localT.approval) {
-              tickets[matchIdx].approval = localT.approval;
-            }
-            if (localT.status) {
-              tickets[matchIdx].status = localT.status;
-            }
-            if (localT.timestamp) {
-              tickets[matchIdx].timestamp = localT.timestamp;
-            }
-          } else {
-            tickets.push(localT);
-          }
-        });
         cachedTickets = tickets;
         renderDashboardUI();
       }
@@ -1062,45 +1025,31 @@
           return;
         }
 
-        // Update ticket fields in-memory cache instantly
-        ticketToUpdate.approval = newStatus;
-        if (newStatus === 'rejected') {
-          ticketToUpdate.status = 'unused';
-        }
-
-        // Update locally first (always succeeds)
-        let localTickets = JSON.parse(localStorage.getItem('tickets')) || [];
-        const localIndex = localTickets.findIndex(t => t.id === tId);
-        if (localIndex !== -1) {
-          localTickets[localIndex].approval = newStatus;
-          if (newStatus === 'rejected') {
-            localTickets[localIndex].status = 'unused';
-          }
-        } else {
-          localTickets.push({ ...ticketToUpdate });
-        }
-        localStorage.setItem('tickets', JSON.stringify(localTickets));
-
-        // Optimistically update the dashboard UI and show success instantly!
-        showAdminSuccessBanner(`Attendee has been successfully ${newStatus}!`);
-        renderDashboardUI();
-
-        // Perform Firestore update in the background (asynchronously, do not await!)
-        (async () => {
-          try {
-            const ticketRef = doc(db, 'tickets', tId);
-            const ticketSnap = await getDoc(ticketRef);
-            if (ticketSnap.exists()) {
-              const updateData = { approval: newStatus };
-              if (newStatus === 'rejected') {
-                updateData.status = 'unused';
-              }
-              await updateDoc(ticketRef, updateData);
+        // Perform Firestore update strictly
+        try {
+          const ticketRef = doc(db, 'tickets', tId);
+          const ticketSnap = await getDoc(ticketRef);
+          if (ticketSnap.exists()) {
+            const updateData = { approval: newStatus };
+            if (newStatus === 'rejected') {
+              updateData.status = 'unused';
             }
-          } catch(e) { 
-            console.warn("Firestore update failed, updated locally:", e);
+            await updateDoc(ticketRef, updateData);
+            
+            // Update ticket fields in-memory cache instantly only if success
+            ticketToUpdate.approval = newStatus;
+            if (newStatus === 'rejected') {
+              ticketToUpdate.status = 'unused';
+            }
+            showAdminSuccessBanner(`Attendee has been successfully ${newStatus}!`);
+            renderDashboardUI();
+          } else {
+            showCheckinError("Error: Ticket not found in Cloud!");
           }
-        })();
+        } catch(e) { 
+          console.error("Firestore update failed:", e);
+          showCheckinError("Cloud update failed: " + e.message);
+        }
       }
 
       async function processCheckIn(tId) {
@@ -1130,21 +1079,7 @@
           }
         }
 
-        // Fallback 2: Check in local storage tickets list (in case cachedTickets wasn't updated)
-        if (!ticket) {
-          try {
-            const localTickets = JSON.parse(localStorage.getItem('tickets')) || [];
-            const matchedLocal = localTickets.find(t => t.id === cleanId);
-            if (matchedLocal) {
-              ticket = { ...matchedLocal };
-              cachedTickets.push(ticket);
-            }
-          } catch (e) {
-            console.error("Error loading tickets from local storage:", e);
-          }
-        }
-
-        // Fallback 3: If still not found but matches the valid ticket format, auto-create it on-the-fly as a walk-in/offline ticket
+        // Fallback 2: Auto-create it on-the-fly as a walk-in/offline ticket in the Cloud
         if (!ticket) {
           if (/^PRNT-/i.test(cleanId)) {
             ticket = {
@@ -1157,17 +1092,12 @@
               timestamp: new Date().toLocaleString(),
               answers: {}
             };
-            cachedTickets.push(ticket);
-            
-            // Save this new ticket to local storage
             try {
-              let localTickets = JSON.parse(localStorage.getItem('tickets')) || [];
-              if (!localTickets.some(t => t.id === cleanId)) {
-                localTickets.push(ticket);
-                localStorage.setItem('tickets', JSON.stringify(localTickets));
-              }
-            } catch (e) {
-              console.error("Failed to save auto-created ticket locally:", e);
+              await setDoc(doc(db, 'tickets', cleanId), ticket);
+              cachedTickets.push(ticket);
+            } catch(e) {
+              showCheckinError("Cloud auto-create failed: " + e.message);
+              return;
             }
           } else {
             showCheckinError(`Error: Invalid Ticket ID "${cleanId}"!`);
@@ -1188,36 +1118,23 @@
         ticket.status = 'checked-in';
         ticket.timestamp = checkinTime;
 
-        // Update locally
-        let localTickets = JSON.parse(localStorage.getItem('tickets')) || [];
-        const localIndex = localTickets.findIndex(t => t.id === cleanId);
-        if (localIndex !== -1) {
-          localTickets[localIndex].status = 'checked-in';
-          localTickets[localIndex].timestamp = checkinTime;
-          localTickets[localIndex].approval = 'approved';
-        } else {
-          localTickets.push({ ...ticket });
+        // Perform Firestore update strictly
+        try {
+          const ticketRef = doc(db, 'tickets', cleanId);
+          await updateDoc(ticketRef, {
+            status: 'checked-in',
+            timestamp: checkinTime,
+            approval: 'approved'
+          });
+          
+          // Optimistically show success and re-render table instantly!
+          showCheckinSuccess(ticket.email, cleanId);
+          stopCameraScan(); // Auto-stop scanner on successful check-in
+          renderDashboardUI();
+        } catch(e) { 
+          console.error("Firestore check-in failed:", e);
+          showCheckinError("Cloud check-in failed: " + e.message);
         }
-        localStorage.setItem('tickets', JSON.stringify(localTickets));
-
-        // Optimistically show success and re-render table instantly!
-        showCheckinSuccess(ticket.email, cleanId);
-        stopCameraScan(); // Auto-stop scanner on successful check-in
-        renderDashboardUI();
-
-        // Perform Firestore update in the background
-        (async () => {
-          try {
-            const ticketRef = doc(db, 'tickets', cleanId);
-            await updateDoc(ticketRef, {
-              status: 'checked-in',
-              timestamp: checkinTime,
-              approval: 'approved'
-            });
-          } catch(e) { 
-            console.warn("Firestore check-in failed, updated locally:", e);
-          }
-        })();
       }
 
       // ── Full-screen Check-in Success Overlay ──
