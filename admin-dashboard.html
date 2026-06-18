@@ -378,6 +378,107 @@
       border-radius: 1.5rem;
       overflow: hidden;
     }
+
+    /* ── Already Scanned Overlay ── */
+    @keyframes shake-h {
+      0%,100% { transform: translateX(0); }
+      15%      { transform: translateX(-8px); }
+      30%      { transform: translateX(8px); }
+      45%      { transform: translateX(-6px); }
+      60%      { transform: translateX(6px); }
+      75%      { transform: translateX(-3px); }
+      90%      { transform: translateX(3px); }
+    }
+    @keyframes already-overlay-in {
+      from { opacity: 0; transform: scale(0.88); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes already-overlay-out {
+      from { opacity: 1; transform: scale(1); }
+      to   { opacity: 0; transform: scale(1.04); }
+    }
+    @keyframes already-countdown-bar {
+      from { width: 100%; }
+      to   { width: 0%; }
+    }
+    #already-scanned-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    #already-scanned-overlay.visible {
+      display: flex;
+      animation: already-overlay-in 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    #already-scanned-overlay.hiding {
+      animation: already-overlay-out 0.25s ease-in both;
+    }
+    .already-scanned-card {
+      background: #ffffff;
+      border-radius: 1.5rem;
+      padding: 2.5rem 2rem 1.75rem;
+      max-width: 380px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.45);
+      position: relative;
+      overflow: hidden;
+      animation: shake-h 0.55s 0.2s ease both;
+    }
+    .already-scanned-icon {
+      width: 96px;
+      height: 96px;
+      margin: 0 auto 1.25rem;
+      background: #fff7ed;
+      border: 4px solid #f59e0b;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.75rem;
+      line-height: 1;
+    }
+    .already-scanned-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #92400e;
+      margin: 0 0 0.25rem;
+      letter-spacing: -0.5px;
+    }
+    .already-scanned-sub {
+      font-size: 0.85rem;
+      color: #6b7280;
+      margin: 0 0 1.25rem;
+    }
+    .already-scanned-chip {
+      display: inline-block;
+      background: #fff7ed;
+      border: 1px solid #fcd34d;
+      border-radius: 999px;
+      padding: 0.3rem 0.9rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #92400e;
+      margin: 0.2rem 0.15rem;
+      font-family: monospace;
+      letter-spacing: 0.02em;
+    }
+    .already-scanned-countdown-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #f59e0b, #fbbf24);
+      border-radius: 0 0 0 1.5rem;
+      animation: already-countdown-bar 3s linear forwards;
+    }
   </style>
 </head>
 <body class="dashboard-page-wrapper">
@@ -466,6 +567,17 @@
         <p class="checkin-success-sub" id="checkin-overlay-sub">Attendee verified &amp; admitted</p>
         <div id="checkin-overlay-chips"></div>
         <div class="checkin-countdown-bar" id="checkin-countdown-bar"></div>
+      </div>
+    </div>
+
+    <!-- Full-screen Already Scanned Overlay -->
+    <div id="already-scanned-overlay" role="dialog" aria-modal="true" aria-label="Already scanned">
+      <div class="already-scanned-card">
+        <div class="already-scanned-icon">⚠️</div>
+        <p class="already-scanned-title">Already Scanned!</p>
+        <p class="already-scanned-sub" id="already-scanned-sub">This ticket has already been checked in.</p>
+        <div id="already-scanned-chips"></div>
+        <div class="already-scanned-countdown-bar" id="already-scanned-bar"></div>
       </div>
     </div>
 
@@ -1065,7 +1177,7 @@
         }
 
         if (ticket.status === 'checked-in') {
-          showCheckinError(`Warning: Ticket ${cleanId} is already checked in!`);
+          showAlreadyScannedOverlay(ticket.email, cleanId);
           stopCameraScan(); // Auto-stop scanner when scanning already checked-in tickets
           return;
         }
@@ -1224,6 +1336,62 @@
           adminErrorBanner.classList.add('hidden');
         }, 5000);
       }
+
+      // ── Already Scanned Popup Overlay ──
+      const alreadyScannedOverlay = document.getElementById('already-scanned-overlay');
+      const alreadyScannedSub     = document.getElementById('already-scanned-sub');
+      const alreadyScannedChips   = document.getElementById('already-scanned-chips');
+      const alreadyScannedBar     = document.getElementById('already-scanned-bar');
+      let alreadyScannedTimer = null;
+
+      function playWarningBeep() {
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(520, ctx.currentTime);
+          osc.frequency.setValueAtTime(380, ctx.currentTime + 0.12);
+          gain.gain.setValueAtTime(0.25, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+          osc.start(ctx.currentTime);
+          osc.stop(ctx.currentTime + 0.35);
+        } catch(e) {/* audio blocked – silently skip */}
+      }
+
+      function showAlreadyScannedOverlay(email, ticketId) {
+        if (alreadyScannedTimer) clearTimeout(alreadyScannedTimer);
+        alreadyScannedOverlay.classList.remove('hiding');
+
+        alreadyScannedSub.textContent = 'This ticket was already checked in earlier.';
+        alreadyScannedChips.innerHTML = [
+          email    ? `<span class="already-scanned-chip">${email}</span>` : '',
+          ticketId ? `<span class="already-scanned-chip">${ticketId}</span>` : ''
+        ].join('');
+
+        // Reset & restart countdown bar
+        alreadyScannedBar.style.animation = 'none';
+        void alreadyScannedBar.offsetWidth;
+        alreadyScannedBar.style.animation = 'already-countdown-bar 3s linear forwards';
+
+        alreadyScannedOverlay.classList.add('visible');
+        playWarningBeep();
+
+        alreadyScannedTimer = setTimeout(() => {
+          alreadyScannedOverlay.classList.add('hiding');
+          setTimeout(() => {
+            alreadyScannedOverlay.classList.remove('visible', 'hiding');
+          }, 260);
+        }, 3000);
+      }
+
+      alreadyScannedOverlay.addEventListener('click', () => {
+        if (alreadyScannedTimer) clearTimeout(alreadyScannedTimer);
+        alreadyScannedOverlay.classList.add('hiding');
+        setTimeout(() => alreadyScannedOverlay.classList.remove('visible', 'hiding'), 260);
+      });
 
       function showAdminSuccessBanner(msg) {
         if (adminErrorBanner) adminErrorBanner.classList.add('hidden');
